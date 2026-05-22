@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Baixa de Itens</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container" style="max-width: 600px; margin-top: 40px;">
+        <h2 style="margin-top: 0; color: #0f172a;">Requisição e Saída de Material</h2>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flash-message flash-error">{{ messages[0] }}</div>
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" style="max-width: 100%; border: none; padding: 0; margin: 0;">
+            <label>Selecione o item para baixa no estoque:</label>
+            <select name="item_id" required>
+                {% for item in estoque %}
+                    <option value="{{ item.id_produto }}">
+                        [{{ item.id_produto }}] {{ item.nome }} - Atual: {{ item.quantidade }} un
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label>Quantidade volumétrica de saída:</label>
+            <input type="number" name="quantidade" min="1" required placeholder="Quantidade a retirar">
+
+            <div style="margin-top: 10px;">
+                <button type="submit" style="background-color: var(--danger-color);">Confirmar Baixa</button>
+                <a href="{{ url_for('lobby') }}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

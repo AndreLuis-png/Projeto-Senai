@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Estoque Geral - Almoxarifado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Painel do Almoxarifado</h1>
+        <p>Operador Ativo: <strong>{{ session['usuario'] }}</strong></p>
+        <nav>
+            <a href="{{ url_for('lobby') }}" class="active">🔎 Consultar Estoque</a> 
+            <a href="{{ url_for('insercao') }}">📥 Entrada de Material</a> 
+            <a href="{{ url_for('retirada') }}">📤 Saída/Retirada</a> 
+            {% if session['is_admin'] %}
+                <a href="{{ url_for('admin_panel') }}" style="color: #f87171; font-weight: 600;">🛠️ Gerenciamento Admin</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" style="margin-left: auto; background-color: rgba(239, 68, 68, 0.2); color: #fca5a5;">Sair</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <section class="ads-banner">
+            <small>Comunicado Interno</small>
+            <p>"Atenção: Inventário rotativo do pavilhão B agendado para a próxima sexta-feira no final do turno."</p>
+        </section>
+
+        <!-- Barra de Ferramentas com Filtro por Categoria -->
+        <div class="filter-bar">
+            <form method="GET" action="{{ url_for('lobby') }}" id="form-filtro">
+                <label for="area_filtro">Filtrar visualização por Categoria de Uso:</label>
+                <div class="filter-group">
+                    <select name="area_filtro" id="area_filtro" onchange="document.getElementById('form-filtro').submit();">
+                        <option value="Todos" {% if area_atual == 'Todos' %}selected{% endif %}>📦 Todos os Materiais</option>
+                        <option value="Geral" {% if area_atual == 'Geral' %}selected{% endif %}>⚙️ Utilidade Geral</option>
+                        <option value="Mecânica" {% if area_atual == 'Mecânica' %}selected{% endif %}>🔧 Setor Mecânico</option>
+                        <option value="Elétrica" {% if area_atual == 'Elétrica' %}selected{% endif %}>⚡ Setor Elétrico</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <h2 style="color: #0f172a; margin-bottom: 5px;">Inventário de Itens</h2>
+        <p style="color: #64748b; font-size: 14px; margin: 0 0 20px 0;">Dados em tempo real organizados sequencialmente por Número de ID.</p>
+        
+        {% if estoque %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 100px;">Código (ID)</th>
+                    <th>Descrição do Item</th>
+                    <th>Área / Setor</th>
+                    <th>Saldo Atual</th>
+                    <th>Especificações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in estoque %}
+                <tr>
+                    <td><code>{{ item.id_produto }}</code></td>
+                    <td><strong>{{ item.nome }}</strong></td>
+                    <td><span class="badge badge-{{ item.area | lower }}">{{ item.area }}</span></td>
+                    <td>{{ item.quantidade }} unidades</td>
+                    <td style="color: #64748b;">{{ item.descricao if item.descricao else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>Nenhum registro localizado para os filtros ativos.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

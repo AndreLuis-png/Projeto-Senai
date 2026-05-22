@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Produto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container" style="max-width: 600px; margin-top: 40px;">
+        <h2 style="margin-top: 0; color: #0f172a;">Cadastro e Entrada de Materiais</h2>
+        <form method="POST" style="max-width: 100%; border: none; padding: 0; margin: 0;">
+            <label>Nome Comercial / Produto:</label>
+            <input type="text" name="nome" required placeholder="Ex: Chave Allen 5mm">
+
+            <label>Área Restrita de Destinação:</label>
+            <select name="area" required>
+                <option value="Geral">Utilidade Geral (Identificador Inicial 0)</option>
+                <option value="Mecânica">Área Mecânica (Identificador Inicial 1)</option>
+                <option value="Elétrica">Área Elétrica (Identificador Inicial 2)</option>
+            </select>
+
+            <label>Quantidade do lote inicial:</label>
+            <input type="number" name="quantidade" min="1" value="1" required>
+
+            <label>Observações / Descritivo Técnico:</label>
+            <textarea name="descricao" rows="4" placeholder="Detalhes adicionais sobre o produto..."></textarea>
+
+            <div style="margin-top: 10px;">
+                <button type="submit">Salvar Registro</button> 
+                <a href="{{ url_for('lobby') }}" class="btn btn-secondary">Retornar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

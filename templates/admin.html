@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Controle Gerencial - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header style="background-color: #0f172a;">
+        <h1>Painel de Controle Administrador</h1>
+        <nav>
+            <a href="{{ url_for('lobby') }}">🔙 Painel de Estoque</a>
+            <a href="{{ url_for('logout') }}" style="margin-left: auto; background-color: rgba(239, 68, 68, 0.2); color: #fca5a5;">Sair do Sistema</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, msg in messages %}
+              <div class="flash-message {% if category == 'success' %}flash-success{% else %}flash-error{% endif %}">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div style="display: flex; gap: 25px; flex-wrap: wrap;">
+            
+            <div style="flex: 12; min-width: 300px;">
+                <h2>Operações de Funcionários</h2>
+                <form method="POST" style="max-width: 100%;">
+                    <label>Nome do Funcionário/Usuário:</label>
+                    <input type="text" name="funcionario" required>
+
+                    <label>Chave de Acesso (Nova senha):</label>
+                    <input type="text" name="nova_senha" placeholder="Preencha caso queira atualizar ou criar">
+
+                    <label>Ação Operacional Administrativa:</label>
+                    <select name="acao" required>
+                        <option value="cadastrar">Registrar Novo Perfil</option>
+                        <option value="alterar_dados">Substituir Dados Cadastrais</option>
+                        <option value="restringir_temp">Bloqueio Temporário de Acesso</option>
+                        <option value="restringir_perm">Bloqueio Permanente (Revogação)</option>
+                        <option value="excluir">Remover Usuário Definitivamente</option>
+                    </select>
+
+                    <div class="admin-box">
+                        <label style="color: #92400e; margin-bottom: 4px;">⚠️ Token Secundário Intermediário:</label>
+                        <input type="password" name="verificacao_seguranca" placeholder="Chave de segurança mestre" style="margin-bottom: 0;">
+                    </div>
+
+                    <button type="submit" style="width: 100%; background-color: #0f172a;">Processar Diretriz</button>
+                </form>
+            </div>
+
+            <div style="flex: 10; min-width: 300px;">
+                <h2>Parâmetros do Sistema</h2>
+                <form method="POST" style="max-width: 100%;">
+                    <input type="hidden" name="acao" value="alterar_chave_mestra">
+                    <label>Código Global de Autorização Permanente:</label>
+                    <input type="password" name="nova_chave" required>
+                    <button type="submit" style="background-color: #475569;">Atualizar Código</button>
+                </form>
+
+                <h2>Operadores Cadastrados</h2>
+                <ul style="background: #f8fafc; padding: 15px 15px 15px 35px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    {% for usuario in usuarios %}
+                        <li style="margin-bottom: 8px;"><strong>{{ usuario.login }}</strong> — Status: <em style="color: #0284c7;">{{ usuario.status }}</em></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 35px 0;">
+
+        <h2>📋 Histórico de Logs do Almoxarifado</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuário do Processo</th>
+                    <th>Tipo de Ação</th>
+                    <th>Log Detalhado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in historico %}
+                <tr>
+                    <td><strong>{{ log.usuario }}</strong></td>
+                    <td>{{ log.acao }}</td>
+                    <td style="color: #475569;">{{ log.detalhe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
