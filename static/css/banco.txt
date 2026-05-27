@@ -1,3 +1,5 @@
+Guia para Banco de dados:
+
 -- 1. Criação do Banco de Dados (Schema)
 CREATE DATABASE IF NOT EXISTS almoxarifado_db 
 CHARACTER SET utf8mb4 

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Material</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container" style="max-width: 600px; margin-top: 50px;">
+        <h2>Editar Informações do Material</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, msg in messages %}
+              <div class="flash-message {% if category == 'success' %}flash-success{% else %}flash-error{% endif %}">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <p style="color: var(--gray-muted); margin-bottom: 25px;">
+            Código Atual: <code style="font-size: 16px;">{{ produto.id_produto }}</code> 
+        </p>
+        
+        <form method="POST">
+            <label>Nome do Produto:</label>
+            <input type="text" name="nome" value="{{ produto.nome }}" list="produtos-existentes" required autocomplete="off">
+            
+            <datalist id="produtos-existentes">
+                {% for nome in sugestoes %}
+                    <option value="{{ nome }}">
+                {% endfor %}
+            </datalist>
+
+            <label>Área de Uso / Setor:</label>
+            <select name="area" required>
+                <option value="Geral" {% if produto.area == 'Geral' %}selected{% endif %}>⚙️ Utilidade Geral</option>
+                <option value="Mecânica" {% if produto.area == 'Mecânica' %}selected{% endif %}>🔧 Setor Mecânico</option>
+                <option value="Elétrica" {% if produto.area == 'Elétrica' %}selected{% endif %}>⚡ Setor Elétrico</option>
+            </select>
+
+            <label>Quantidade em Stock:</label>
+            <input type="number" name="quantidade" min="0" value="{{ produto.quantidade }}" required>
+
+            <label>Especificação / Descrição do Tipo:</label>
+            <textarea name="descricao" rows="4" maxlength="255">{{ produto.descricao if produto.descricao else '' }}</textarea>
+            <small style="color: #64748b; display: block; margin-top: -5px; margin-bottom: 15px;">Máximo de 255 caracteres.</small>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="submit" name="botao_acao" value="salvar" style="flex: 2;">Salvar Alterações</button>
+                <button type="submit" name="botao_acao" value="excluir" style="background: #ef4444; flex: 1;" onclick="return confirm('ATENÇÃO: Deseja apagar este produto para corrigir um lançamento incorreto? Todas as unidades registradas serão descartadas permanentemente do estoque.');">🗑️ Apagar Produto</button>
+                <a href="{{ url_for('lobby') }}" class="btn btn-secondary" style="text-align: center; line-height: 38px;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,34 +1,55 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
-    <title>Cadastrar Produto</title>
+    <title>Entrada de Material</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container" style="max-width: 600px; margin-top: 40px;">
-        <h2 style="margin-top: 0; color: #0f172a;">Cadastro e Entrada de Materiais</h2>
-        <form method="POST" style="max-width: 100%; border: none; padding: 0; margin: 0;">
-            <label>Nome Comercial / Produto:</label>
-            <input type="text" name="nome" required placeholder="Ex: Chave Allen 5mm">
+    <header>
+        <h1>Painel do Almoxarifado</h1>
+        <p>Operador: <strong>{{ session['usuario'] }}</strong></p>
+        <nav>
+            <a href="{{ url_for('lobby') }}">🔎 Consultar Stock</a> 
+            <a href="{{ url_for('insercao') }}" class="active">📥 Entrada de Material</a> 
+            <a href="{{ url_for('retirada') }}">📤 Saída / Baixa</a> 
+            {% if session['is_admin'] %}
+                <a href="{{ url_for('admin_panel') }}" style="color:#f87171;">🛠️ Administração</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" style="margin-left: auto; background: rgba(239,68,68,0.2);">Sair</a>
+        </nav>
+    </header>
 
-            <label>Área Restrita de Destinação:</label>
+    <div class="container" style="max-width: 600px; margin-top: 30px;">
+        <h2>Registo / Entrada de Equipamento</h2>
+        
+        <form method="POST">
+            <label>Nome do Equipamento / Objeto:</label>
+            <input type="text" name="nome" list="produtos-existentes" required placeholder="Digite o item (ex: Multimetro)..." autocomplete="off">
+            <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 10px;">💡 O sistema removerá acentos e padronizará em maiúsculas automaticamente para evitar duplicados.</small>
+            
+            <datalist id="produtos-existentes">
+                {% for nome in sugestoes %}
+                    <option value="{{ nome }}">
+                {% endfor %}
+            </datalist>
+
+            <label>Área Técnica / Setor:</label>
+            <small style="color: #64748b; display:block; margin-bottom: 5px;">Nota: Se o item já existir no banco, ele assumirá o setor original de forma automática.</small>
             <select name="area" required>
-                <option value="Geral">Utilidade Geral (Identificador Inicial 0)</option>
-                <option value="Mecânica">Área Mecânica (Identificador Inicial 1)</option>
-                <option value="Elétrica">Área Elétrica (Identificador Inicial 2)</option>
+                <option value="Geral">⚙️ Utilidade Geral (Prefixo 0)</option>
+                <option value="Mecânica">🔧 Setor Mecânico (Prefixo 1)</option>
+                <option value="Elétrica">⚡ Setor Elétrico (Prefixo 2)</option>
             </select>
 
-            <label>Quantidade do lote inicial:</label>
+            <label>Quantidade de Entrada:</label>
             <input type="number" name="quantidade" min="1" value="1" required>
 
-            <label>Observações / Descritivo Técnico:</label>
-            <textarea name="descricao" rows="4" placeholder="Detalhes adicionais sobre o produto..."></textarea>
+            <label>Especificação / Descrição Curta:</label>
+            <textarea name="descricao" rows="3" maxlength="255" placeholder="Ex: Modelo, marca ou especificações complementares..."></textarea>
+            <small style="color: #64748b; display: block; margin-top: -5px; margin-bottom: 15px;">Máximo de 255 caracteres.</small>
 
-            <div style="margin-top: 10px;">
-                <button type="submit">Salvar Registro</button> 
-                <a href="{{ url_for('lobby') }}" class="btn btn-secondary">Retornar</a>
-            </div>
+            <button type="submit">Confirmar Entrada</button>
         </form>
     </div>
 </body>

@@ -1,37 +1,48 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
-    <title>Baixa de Itens</title>
+    <title>Saída de Material</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container" style="max-width: 600px; margin-top: 40px;">
-        <h2 style="margin-top: 0; color: #0f172a;">Requisição e Saída de Material</h2>
-        
+    <header>
+        <h1>Painel do Almoxarifado</h1>
+        <p>Operador: <strong>{{ session['usuario'] }}</strong></p>
+        <nav>
+            <a href="{{ url_for('lobby') }}">🔎 Consultar Stock</a> 
+            <a href="{{ url_for('insercao') }}">📥 Entrada de Material</a> 
+            <a href="{{ url_for('retirada') }}" class="active">📤 Saída / Baixa</a> 
+            {% if session['is_admin'] %}
+                <a href="{{ url_for('admin_panel') }}" style="color:#f87171;">🛠️ Administração</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" style="margin-left: auto; background: rgba(239,68,68,0.2);">Sair</a>
+        </nav>
+    </header>
+
+    <div class="container" style="max-width: 600px; margin-top: 30px;">
+        <h2>Dar Baixa / Retirada de Equipamento</h2>
+
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             <div class="flash-message flash-error">{{ messages[0] }}</div>
           {% endif %}
         {% endwith %}
-
-        <form method="POST" style="max-width: 100%; border: none; padding: 0; margin: 0;">
-            <label>Selecione o item para baixa no estoque:</label>
-            <select name="item_id" required>
+        
+        <form method="POST">
+            <label>Selecione ou Digite o Equipamento:</label>
+            <input type="text" name="nome_item_busca" list="produtos-saida" required placeholder="Comece a digitar o nome do item..." autocomplete="off">
+            
+            <datalist id="produtos-saida">
                 {% for item in estoque %}
-                    <option value="{{ item.id_produto }}">
-                        [{{ item.id_produto }}] {{ item.nome }} - Atual: {{ item.quantidade }} un
-                    </option>
+                    <option value="{{ item.nome }}">Saldo Atual: {{ item.quantidade }} un | ID: {{ item.id_produto }}</option>
                 {% endfor %}
-            </select>
+            </datalist>
 
-            <label>Quantidade volumétrica de saída:</label>
-            <input type="number" name="quantidade" min="1" required placeholder="Quantidade a retirar">
+            <label>Quantidade a Retirar:</label>
+            <input type="number" name="quantidade" min="1" value="1" required>
 
-            <div style="margin-top: 10px;">
-                <button type="submit" style="background-color: var(--danger-color);">Confirmar Baixa</button>
-                <a href="{{ url_for('lobby') }}" class="btn btn-secondary">Voltar</a>
-            </div>
+            <button type="submit" style="background: #b45309;">Confirmar Retirada</button>
         </form>
     </div>
 </body>
