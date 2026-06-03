@@ -57,11 +57,6 @@ INSERT INTO estoque (id_produto, nome, area, quantidade, descricao) VALUES
 ('10001', 'Alicate', 'Mecânica', 5, 'Alicate de pressão'),
 ('20001', 'Chave de Fenda', 'Elétrica', 8, 'Isolada 1000V');
 
-SELECT * FROM estoque
-SELECT * FROM config_admin
-SELECT * FROM historico_logs
-SELECT * FROM usuarios
-
 USE almoxarifado_db;
 
 -- Adiciona a coluna de nível de acesso (padrão 'user' para operadores comuns)
@@ -70,3 +65,21 @@ ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user';
 
 -- Define o teu utilizador 'admin' como administrador do sistema
 UPDATE usuarios SET role = 'admin' WHERE login = 'admin';
+
+ALTER TABLE estoque ADD COLUMN link_imagem VARCHAR(500) DEFAULT NULL;
+
+-- 1. Cria a nova tabela para armazenar os links de mídia
+CREATE TABLE IF NOT EXISTS midia_produtos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_produto VARCHAR(10) NOT NULL,
+    link_url VARCHAR(500) NOT NULL,
+    FOREIGN KEY (id_produto) REFERENCES estoque(id_produto) ON DELETE CASCADE
+);
+
+-- 2. (Opcional) Remove a coluna link_imagem da tabela estoque para limpar o banco
+ALTER TABLE estoque DROP COLUMN link_imagem;
+
+SELECT * FROM estoque
+SELECT * FROM config_admin
+SELECT * FROM historico_logs
+SELECT * FROM usuarios

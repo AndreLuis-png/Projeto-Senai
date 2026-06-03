@@ -2,8 +2,49 @@
 <html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
-    <title>Estoque Geral</title>
+    <title>Consulta de Estoque</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .btn-editar-laranja {
+            background-color: #f97316 !important;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .btn-editar-laranja:hover {
+            background-color: #ea580c !important;
+        }
+        .btn-visualizar-azul {
+            background-color: #0284c7 !important;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-visualizar-azul:hover {
+            background-color: #0369a1 !important;
+        }
+        table td {
+            text-transform: none !important;
+        }
+        .container-imagem-oculta {
+            display: none; 
+            margin-top: 8px; 
+            background: #1e293b; 
+            padding: 6px; 
+            border-radius: 8px; 
+            border: 1px solid #475569;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -20,53 +61,110 @@
         </nav>
     </header>
 
-    <div class="container">
-        {% with messages = get_flashed_messages() %}
+    <div class="container" style="max-width: 1200px; margin-top: 30px;">
+        <h2>Visão Geral do Stock</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            <div class="flash-message flash-success">{{ messages[0] }}</div>
+            {% for category, msg in messages %}
+              <div class="flash-message {% if category == 'success' %}flash-success{% else %}flash-error{% endif %}">
+                {{ msg }}
+              </div>
+            {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <div class="filter-bar">
-            <form method="GET" action="{{ url_for('lobby') }}" id="filtro-form">
-                <label>Filtrar por Categoria Industrial:</label>
-                <select name="area_filtro" onchange="document.getElementById('filtro-form').submit();" style="margin:0;">
-                    <option value="Todos" {% if area_atual == 'Todos' %}selected{% endif %}>📦 Todos os Materiais</option>
-                    <option value="Geral" {% if area_atual == 'Geral' %}selected{% endif %}>⚙️ Utilidade Geral</option>
-                    <option value="Mecânica" {% if area_atual == 'Mecânica' %}selected{% endif %}>🔧 Setor Mecânico</option>
-                    <option value="Elétrica" {% if area_atual == 'Elétrica' %}selected{% endif %}>⚡ Setor Elétrico</option>
-                </select>
-            </form>
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+            <span>Filtrar Setor:</span>
+            <a href="{{ url_for('lobby', area_filtro='Todos') }}" class="btn {% if area_atual == 'Todos' %}btn-primary{% else %}btn-secondary{% endif %}">Todos</a>
+            <a href="{{ url_for('lobby', area_filtro='Geral') }}" class="btn {% if area_atual == 'Geral' %}btn-primary{% else %}btn-secondary{% endif %}">⚙️ Geral</a>
+            <a href="{{ url_for('lobby', area_filtro='Mecânica') }}" class="btn {% if area_atual == 'Mecânica' %}btn-primary{% else %}btn-secondary{% endif %}">🔧 Mecânica</a>
+            <a href="{{ url_for('lobby', area_filtro='Elétrica') }}" class="btn {% if area_atual == 'Elétrica' %}btn-primary{% else %}btn-secondary{% endif %}">⚡ Elétrica</a>
         </div>
 
-        <h2>Inventário Atualizado (Ordem por ID)</h2>
         <table>
             <thead>
                 <tr>
                     <th>Código ID</th>
                     <th>Nome do Item</th>
-                    <th>Área Técnica</th>
-                    <th>Quantidade</th>
-                    <th style="width: 300px;">Descrição</th> <th>Ações</th>
+                    <th>Setor</th>
+                    <th>Qtd Disponível</th>
+                    <th>Descrição / Detalhes</th>
+                    <th>Ações / Mídia</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in estoque %}
                 <tr>
                     <td><code>{{ item.id_produto }}</code></td>
-                    <td><strong>{{ item.nome }}</strong></td>
-                    <td><span class="badge badge-{{ item.area | lower }}">{{ item.area }}</span></td>
-                    <td>{{ item.quantidade }} un</td>
-                    <td style="max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4; text-align: left;">
-                        {{ item.descricao if item.descricao else '-' }}
-                    </td>
+                    <td style="font-weight: bold;">{{ item.nome }}</td>
+                    <td>{{ item.area }}</td>
                     <td>
-                        <a href="{{ url_for('editar', id_produto=item.id_produto) }}" class="btn" style="padding: 5px 10px; font-size: 12px; font-weight: 600;">✏️ Editar</a>
+                        <span class="badge {% if item.quantidade > 0 %}badge-success{% else %}badge-danger{% endif %}">
+                            {{ item.quantidade }} un
+                        </span>
                     </td>
+                    <td>{{ item.descricao if item.descricao else '-' }}</td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{{ url_for('editar', id_produto=item.id_produto) }}" class="btn-editar-laranja">Editar</a>
+                                
+                                {% if item.possui_imagem == 1 %}
+                                    <button class="btn-visualizar-azul" onclick="carregarEVisualizarImagem('{{ item.id_produto }}')">Visualizar</button>
+                                {% else %}
+                                    <span style="color:#64748b; font-size: 12px; font-style: italic; align-self: center;">Sem imagem</span>
+                                {% endif %}
+                            </div>
+
+                            <div id="box-img-{{ item.id_produto }}" class="container-imagem-oculta">
+                                <img id="tag-img-{{ item.id_produto }}" src="" style="width:300px; height:300px; object-fit: cover; border-radius: 6px; display: block;" alt="Carregando...">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #64748b;">Nenhum produto cadastrado nesta categoria.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <script>
+    function carregarEVisualizarImagem(idProduto) {
+        const box = document.getElementById('box-img-' + idProduto);
+        const img = document.getElementById('tag-img-' + idProduto);
+
+        // Se o bloco já estiver aberto, apenas fecha (comportamento de liga/desliga)
+        if (box.style.display === "block") {
+            box.style.display = "none";
+            return;
+        }
+
+        // Se a tag img já tiver uma URL, não precisa buscar no banco de dados de novo
+        if (img.src && img.src !== window.location.href) {
+            box.style.display = "block";
+            return;
+        }
+
+        // Faz a busca dinâmica na nossa rota de API do Flask
+        fetch('/api/obter_link_imagem/' + idProduto)
+            .then(response => response.json())
+            .then(data => {
+                if (data.link_url) {
+                    img.src = data.link_url; // Atribui a URL externa vinda do banco de dados na tag <img>
+                    box.style.display = "block"; // Torna o container visível
+                } else {
+                    alert('Erro ao carregar o link da imagem.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                alert('Não foi possível conectar ao servidor para buscar a imagem.');
+            });
+    }
+    </script>
 </body>
 </html>

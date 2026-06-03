@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title>Entrada de Material</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Garante que nenhum estilo global force o texto a ficar em letras maiúsculas nesta página */
+        input[type="text"], textarea, datalist option {
+            text-transform: none !important;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -25,8 +31,8 @@
         
         <form method="POST">
             <label>Nome do Equipamento / Objeto:</label>
-            <input type="text" name="nome" list="produtos-existentes" required placeholder="Digite o item (ex: Multimetro)..." autocomplete="off">
-            <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 10px;">💡 O sistema removerá acentos e padronizará em maiúsculas automaticamente para evitar duplicados.</small>
+            <input type="text" name="nome" list="produtos-existentes" required placeholder="Digite o item (ex: Multimetro)..." autocomplete="off" style="text-transform: none;">
+            <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 10px;">💡 O sistema removerá acentos e deixará apenas a primeira letra em maiúscula automaticamente.</small>
             
             <datalist id="produtos-existentes">
                 {% for nome in sugestoes %}
@@ -35,7 +41,6 @@
             </datalist>
 
             <label>Área Técnica / Setor:</label>
-            <small style="color: #64748b; display:block; margin-bottom: 5px;">Nota: Se o item já existir no banco, ele assumirá o setor original de forma automática.</small>
             <select name="area" required>
                 <option value="Geral">⚙️ Utilidade Geral (Prefixo 0)</option>
                 <option value="Mecânica">🔧 Setor Mecânico (Prefixo 1)</option>
@@ -46,8 +51,12 @@
             <input type="number" name="quantidade" min="1" value="1" required>
 
             <label>Especificação / Descrição Curta:</label>
-            <textarea name="descricao" rows="3" maxlength="255" placeholder="Ex: Modelo, marca ou especificações complementares..."></textarea>
-            <small style="color: #64748b; display: block; margin-top: -5px; margin-bottom: 15px;">Máximo de 255 caracteres.</small>
+            <textarea name="descricao" rows="3" maxlength="255" placeholder="Ex: Modelo, marca ou especificações complementares..." style="text-transform: none;"></textarea>
+            <small style="color: #64748b; display: block; margin-top: -5px; margin-bottom: 15px;">Máximo de 255 caracteres. Apenas a primeira letra ficará em maiúscula.</small>
+
+            <label>Link da Imagem de Exemplo (URL Opcional):</label>
+            <input type="url" name="link_imagem" placeholder="https://exemplo.com/imagem.jpg">
+            <small style="color: #64748b; display:block; margin-top: -8px; margin-bottom: 15px;">Insira um endereço URL direto de imagem.</small>
 
             <button type="submit">Confirmar Entrada</button>
         </form>

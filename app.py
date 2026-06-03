@@ -1,7 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+# ==============================================================================
+# 💡 NOTA DE INSTALAÇÃO:
+# Se mudar de computador ou precisar reinstalar as dependências do projeto,
+# abra o seu terminal e execute:
+#
+# pip install Flask PyMySQL
+# python app.py
+# ==============================================================================
+
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import pymysql
 import pymysql.cursors
-import unicodedata  # 🌟 Biblioteca nativa para remoção de acentos
+import unicodedata
 
 app = Flask(__name__)
 app.secret_key = 'chave_secreta_almoxarifado'
@@ -24,20 +33,14 @@ class MySQLWrapper:
 
 mysql = MySQLWrapper()
 
-
-# 🛡️ FUNÇÃO PADRONIZADORA (Remove acentos, espaços extras e padroniza em Maiúsculas)
-def normalizar_nome(texto):
+# 🛡️ FUNÇÃO PADRONIZADORA DE TEXTO (Remove acentos e aplica Capitalize)
+def normalizar_texto(texto):
     if not texto:
         return ""
-    # Remove espaços inúteis nas pontas
     texto = texto.strip()
-    # Separa os acentos das letras (Forma NFD)
     texto_nfd = unicodedata.normalize('NFD', texto)
-    # Filtra mantendo apenas o que não for marca de acentuação (Mn = Mark, Nonspacing)
     texto_sem_acento = "".join(c for c in texto_nfd if unicodedata.category(c) != 'Mn')
-    # Retorna em Letras Maiúsculas para total igualdade no banco de dados
-    return texto_sem_acento.upper()
-
+    return texto_sem_acento.capitalize()
 
 def obter_nomes_produtos():
     try:
@@ -94,13 +97,18 @@ def lobby():
     conn = mysql.connection
     cursor = conn.cursor()
     
+    # LEFT JOIN para verificar a existência de mídias cadastradas na nova tabela
+    query_base = """
+        SELECT e.id_produto, e.nome, e.area, e.quantidade, e.descricao, 
+               CASE WHEN m.link_url IS NOT NULL THEN 1 ELSE 0 END as possui_imagem
+        FROM estoque e
+        LEFT JOIN midia_produtos m ON e.id_produto = m.id_produto
+    """
+    
     if area_filtrada and area_filtrada != 'Todos':
-        cursor.execute(
-            "SELECT id_produto, nome, area, quantidade, descricao FROM estoque WHERE area = %s ORDER BY id_produto ASC", 
-            (area_filtrada,)
-        )
+        cursor.execute(query_base + " WHERE e.area = %s ORDER BY e.id_produto ASC", (area_filtrada,))
     else:
-        cursor.execute("SELECT id_produto, nome, area, quantidade, descricao FROM estoque ORDER BY id_produto ASC")
+        cursor.execute(query_base + " ORDER BY e.id_produto ASC")
         
     estoque = cursor.fetchall()
     cursor.close()
@@ -108,18 +116,36 @@ def lobby():
     
     return render_template('lobby.html', estoque=estoque, area_atual=area_filtrada)
 
-# 📥 ENTRADA DE MATERIAL (LÓGICA COM PADRONIZAÇÃO COMPLETA)
+# 🌐 ROTA DE API: RETORNA O LINK DA IMAGEM EM JSON PARA CARREGAMENTO ASSÍNCRONO
+@app.route('/api/obter_link_imagem/<id_produto>')
+def obter_link_imagem(id_produto):
+    if 'usuario' not in session:
+        return jsonify({'error': 'Não autorizado'}), 401
+        
+    conn = mysql.connection
+    cursor = conn.cursor()
+    cursor.execute("SELECT link_url FROM midia_produtos WHERE id_produto = %s LIMIT 1", (id_produto,))
+    midia = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if midia and midia['link_url']:
+        return jsonify({'link_url': midia['link_url']})
+    
+    return jsonify({'error': 'Imagem não encontrada'}), 404
+
+# 📥 ENTRADA DE MATERIAL
 @app.route('/insercao', methods=['GET', 'POST'])
 def insercao():
     if 'usuario' not in session:
         return redirect(url_for('login'))
         
     if request.method == 'POST':
-        # 🌟 Aplica a normalização purificando o texto enviado
-        nome = normalizar_nome(request.form.get('nome'))
+        nome = normalizar_texto(request.form.get('nome'))
         area_solicitada = request.form.get('area')
         quantidade = int(request.form.get('quantidade', 0))
-        descricao = request.form.get('descricao', '').strip()[:255]
+        descricao = normalizar_texto(request.form.get('descricao'))[:255]
+        link_imagem = request.form.get('link_imagem', '').strip()
         
         if not nome:
             flash("Nome do produto inválido!", "error")
@@ -128,22 +154,22 @@ def insercao():
         conn = mysql.connection
         cursor = conn.cursor()
         
-        # Busca direta e segura (ambos estarão em maiúsculas e sem acento)
         cursor.execute("SELECT id_produto, area, quantidade FROM estoque WHERE nome = %s", (nome,))
         item_existente = cursor.fetchone()
         
         if item_existente:
-            area_real = item_existente['area']
+            target_id = item_existente['id_produto']
             nova_qtd_total = item_existente['quantidade'] + quantidade
-            cursor.execute("UPDATE estoque SET quantidade = %s WHERE id_produto = %s", (nova_qtd_total, item_existente['id_produto']))
+            cursor.execute("UPDATE estoque SET quantidade = %s WHERE id_produto = %s", (nova_qtd_total, target_id))
             
-            detalhe_log = f"Reabasteceu '{nome}' (ID: {item_existente['id_produto']}). Vinculado automaticamente ao setor original [{area_real}]. Adicionado: {quantidade} un. Novo Saldo: {nova_qtd_total} un."
+            if link_imagem:
+                cursor.execute("SELECT id FROM midia_produtos WHERE id_produto = %s", (target_id,))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO midia_produtos (id_produto, link_url) VALUES (%s, %s)", (target_id, link_imagem))
+            
+            detalhe_log = f"Reabasteceu '{nome}' (ID: {target_id}). Adicionado: {quantidade} un. Novo Saldo: {nova_qtd_total} un."
             cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Inserção', %s)", (session['usuario'], detalhe_log))
-            
-            if area_solicitada != area_real:
-                flash(f"O item '{nome}' já possui cadastro no setor [{area_real}]. A quantidade foi somada lá para evitar duplicados!", "success")
-            else:
-                flash(f"Quantidade somada ao item '{nome}' com sucesso.", "success")
+            flash(f"Quantidade somada ao item '{nome}' com sucesso.", "success")
             
         else:
             prefixo = '0' if area_solicitada == 'Geral' else ('1' if area_solicitada == 'Mecânica' else '2')
@@ -156,11 +182,15 @@ def insercao():
             else:
                 novo_id = f"{prefixo}0001"
                 
+            # CORRIGIDO AQUI: Alterado o antigo 'quantity' para 'quantidade' na linha abaixo
             cursor.execute(
                 "INSERT INTO estoque (id_produto, nome, area, quantidade, descricao) VALUES (%s, %s, %s, %s, %s)",
                 (novo_id, nome, area_solicitada, quantidade, descricao)
             )
             
+            if link_imagem:
+                cursor.execute("INSERT INTO midia_produtos (id_produto, link_url) VALUES (%s, %s)", (novo_id, link_imagem))
+                
             detalhe_log = f"Cadastrou NOVO item '{nome}' (ID: {novo_id}) com stock inicial de {quantidade} un."
             cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Inserção', %s)", (session['usuario'], detalhe_log))
             flash(f"Novo item '{nome}' cadastrado com sucesso!", "success")
@@ -193,17 +223,17 @@ def editar(id_produto):
                 detalhes_log = f"Excluiu o produto '{antigo['nome']}' (ID: {id_produto}). Saldo apagado: {antigo['quantidade']} un."
                 cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Exclusão', %s)", (session['usuario'], detalhes_log))
                 
-                flash(f"O produto '{antigo['nome']}' foi excluído permanentemente para correção!", "success")
+                flash(f"O produto '{antigo['nome']}' foi excluído!", "success")
                 cursor.close()
                 conn.close()
                 return redirect(url_for('lobby'))
             
             else:
-                # 🌟 Aplica a normalização no nome modificado também
-                novo_nome = normalizar_nome(request.form.get('nome'))
+                novo_nome = normalizar_texto(request.form.get('nome'))
                 nova_area = request.form.get('area')
                 nova_qtd = int(request.form.get('quantidade', 0))
-                nova_descricao = request.form.get('descricao', '').strip()[:255]
+                nova_descricao = normalizar_texto(request.form.get('descricao'))[:255]
+                novo_link = request.form.get('link_imagem', '').strip()
                 
                 if not novo_nome:
                     flash("Nome do produto inválido!", "error")
@@ -226,7 +256,12 @@ def editar(id_produto):
                     (id_final, novo_nome, nova_area, nova_qtd, nova_descricao, id_produto)
                 )
                 
-                detalhes_mudanca = f"Editou item ID {id_produto}. Antigo: [{antigo['nome']}, Qtd: {antigo['quantidade']}]. Novo: [ID: {id_final}, {novo_nome}, Qtd: {nova_qtd}]."
+                # Sincroniza os links na tabela associativa midia_produtos
+                cursor.execute("DELETE FROM midia_produtos WHERE id_produto = %s", (id_final,))
+                if novo_link:
+                    cursor.execute("INSERT INTO midia_produtos (id_produto, link_url) VALUES (%s, %s)", (id_final, novo_link))
+                    
+                detalhes_mudanca = f"Editou item ID {id_produto}. Antigo: [{antigo['nome']}]. Novo: [ID: {id_final}, {novo_nome}]."
                 cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Alteração', %s)", (session['usuario'], detalhes_mudanca))
                 flash(f"Informações do item '{novo_nome}' atualizadas com sucesso!", "success")
                 
@@ -236,15 +271,16 @@ def editar(id_produto):
         
     cursor.execute("SELECT * FROM estoque WHERE id_produto = %s", (id_produto,))
     produto = cursor.fetchone()
+    
+    cursor.execute("SELECT link_url FROM midia_produtos WHERE id_produto = %s LIMIT 1", (id_produto,))
+    midia = cursor.fetchone()
+    link_atual = midia['link_url'] if midia else ''
+    
     cursor.close()
     conn.close()
     
-    if not produto:
-        flash("Produto não encontrado!", "error")
-        return redirect(url_for('lobby'))
-        
     sugestoes = obter_nomes_produtos()
-    return render_template('editar.html', produto=produto, sugestoes=sugestoes)
+    return render_template('editar.html', produto=produto, sugestoes=sugestoes, link_atual=link_atual)
 
 # 📤 RETIRADA / BAIXA DE MATERIAL
 @app.route('/retirada', methods=['GET', 'POST'])
@@ -256,11 +292,10 @@ def retirada():
     cursor = conn.cursor()
     
     if request.method == 'POST':
-        # 🌟 Normaliza a busca para garantir que case com o registro limpo do banco
-        nome_digitado = normalizar_nome(request.form.get('nome_item_busca'))
+        nome_digitado = normalizar_texto(request.form.get('nome_item_busca'))
         quantidade_retirar = int(request.form.get('quantidade', 0))
         
-        cursor.execute("SELECT id_produto, nome, quantidade FROM estoque WHERE nome = %s", (nome_digitado,))
+        cursor.execute("SELECT id_produto, nome, quantity, quantidade FROM estoque WHERE nome = %s", (nome_digitado,))
         produto = cursor.fetchone()
         
         if produto:
@@ -326,13 +361,14 @@ def admin_panel():
                         flash('Este login já existe no sistema.', 'error')
                 elif acao == 'alterar_dados':
                     cursor.execute("UPDATE usuarios SET senha = %s WHERE login = %s", (nova_senha, funcionario))
-                    flash(f'Senha de {funcionario} atualizada!', 'success')
+                    flash(f'Senha de {funcionario} updated!', 'success')
                 elif acao == 'restringir_temp':
+                    periodo_bloqueio = request.form.get('tempo_bloqueio', 'Não especificado')
                     cursor.execute("UPDATE usuarios SET status = 'suspenso_temp' WHERE login = %s", (funcionario,))
-                    flash(f'Usuário {funcionario} suspenso temporariamente.', 'success')
-                elif acao == 'restringir_perm':
-                    cursor.execute("UPDATE usuarios SET status = 'suspenso_perm' WHERE login = %s", (funcionario,))
-                    flash(f'Usuário {funcionario} banido permanentemente.', 'success')
+                    
+                    detalhes_suspensao = f"Usuário {funcionario} suspenso temporariamente por: {periodo_bloqueio}."
+                    cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Bloqueio Temp', %s)", (session['usuario'], detalhes_suspensao))
+                    flash(f'Usuário {funcionario} suspenso por {periodo_bloqueio}.', 'success')
                 elif acao == 'excluir':
                     cursor.execute("DELETE FROM usuarios WHERE login = %s", (funcionario,))
                     flash(f'Usuário {funcionario} eliminado.', 'success')

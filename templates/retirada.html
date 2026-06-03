@@ -21,21 +21,16 @@
     </header>
 
     <div class="container" style="max-width: 600px; margin-top: 30px;">
-        <h2>Dar Baixa / Retirada de Equipamento</h2>
-
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <div class="flash-message flash-error">{{ messages[0] }}</div>
-          {% endif %}
-        {% endwith %}
+        <h2>Saída / Baixa de Material</h2>
         
         <form method="POST">
             <label>Selecione ou Digite o Equipamento:</label>
             <input type="text" name="nome_item_busca" list="produtos-saida" required placeholder="Comece a digitar o nome do item..." autocomplete="off">
+            <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 10px;">💡 O sistema removerá acentos e padronizará o formato automaticamente para localizar o item correspondente.</small>
             
             <datalist id="produtos-saida">
-                {% for item in estoque %}
-                    <option value="{{ item.nome }}">Saldo Atual: {{ item.quantidade }} un | ID: {{ item.id_produto }}</option>
+                {% for nome_sugestao in sugestoes %}
+                    <option value="{{ nome_sugestao }}">
                 {% endfor %}
             </datalist>
 

@@ -1,101 +1,29 @@
-<!DOCTYPE html>
-<html lang="pt-pt">
-<head>
-    <meta charset="UTF-8">
-    <title>Painel Admin</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <header style="background:#0f172a;" class="admin-header">
-        <h1>Gestão Administrativa</h1>
-        <nav>
-            <a href="{{ url_for('lobby') }}">🔙 Voltar ao Stock</a>
-            <a href="{{ url_for('logout') }}" style="margin-left: auto; background: rgba(239,68,68,0.2);">Sair</a>
-        </nav>
-    </header>
-
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, msg in messages %}
-              <div class="flash-message {% if category == 'success' %}flash-success{% else %}flash-error{% endif %}">
-                {{ msg }}
-              </div>
+<div class="card_admin">
+    <h3>Gerenciar Funcionários Existentes</h3>
+    <form method="POST">
+        <label>Selecione o Usuário:</label>
+        <select name="funcionario" required>
+            {% for user in usuarios %}
+                <option value="{{ user.login }}">{{ user.login }} [Perfis: {{ user.role }} | Status: {{ user.status }}]</option>
             {% endfor %}
-          {% endif %}
-        {% endwith %}
+        </select>
 
-        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 300px;">
-                <h2>Controle de Operadores</h2>
-                <form method="POST">
-                    <label>Utilizador Alvo:</label>
-                    <input type="text" name="funcionario" required>
+        <label>Nova Senha (Apenas se for alterar):</label>
+        <input type="password" name="nova_senha" placeholder="Digite uma nova senha se aplicável...">
 
-                    <label>Senha / Nova Senha:</label>
-                    <input type="password" name="nova_senha">
-
-                    <label>Nível de Acesso (Apenas p/ Novos Perfis):</label>
-                    <select name="tipo_permissao">
-                        <option value="user">Operador Comum (Acesso ao Stock)</option>
-                        <option value="admin">Administrador (Controle Total)</option>
-                    </select>
-
-                    <label>Ação Pretendida:</label>
-                    <select name="acao" required>
-                        <option value="cadastrar">Criar Novo Perfil</option>
-                        <option value="alterar_dados">Mudar Palavra-Passe</option>
-                        <option value="restringir_temp">Bloqueio Temporário</option>
-                        <option value="restringir_perm">Bloqueio Permanente</option>
-                        <option value="excluir">Apagar Utilizador</option>
-                    </select>
-
-                    <label style="color:#b45309;">🔑 Chave Secundária Admin (Confirmação):</label>
-                    <input type="password" name="verificacao_seguranca" required placeholder="Padrão do banco: 1234">
-
-                    <button type="submit" style="background:#0f172a;" class="admin-action-btn">Executar Ação</button>
-                </form>
-            </div>
-
-            <div style="flex: 1; min-width: 300px;">
-                <h2>Configurações do Sistema</h2>
-                <form method="POST">
-                    <input type="hidden" name="acao" value="alterar_chave_mestra">
-                    <label>Mudar Chave Secundária do Banco:</label>
-                    <input type="password" name="nova_chave" required>
-                    <button type="submit" style="background:#475569;">Atualizar Token</button>
-                </form>
-
-                <h3>Lista de Perfis Registrados</h3>
-                <ul>
-                    {% for u in usuarios %}
-                        <li><strong>{{ u.login }}</strong> [<span style="color:var(--accent-orange); font-weight:bold;">{{ u.role }}</span>] - <span style="color:var(--secondary);">{{ u.status }}</span></li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <div style="border: 1px solid #334155; padding: 15px; margin: 15px 0; border-radius: 6px; background: rgba(30,41,59,0.5);">
+            <label style="color: #94a3b8; font-weight: bold;">⏱️ Parâmetros para Restrição Temporária:</label>
+            <input type="text" name="tempo_bloqueio" placeholder="Ex: 5 dias, 24 horas, Até segunda-feira...">
+            <small style="color: #64748b; display: block; margin-top: 5px;">Este período será registrado nos logs de auditoria do sistema.</small>
         </div>
 
-        <h2 style="margin-top:40px;">📋 Logs Históricos Recentes</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Operador</th>
-                    <th>Tipo</th>
-                    <th>Ação Executada</th>
-                    <th>Data / Hora</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in historico %}
-                <tr>
-                    <td><strong>{{ log.usuario }}</strong></td>
-                    <td>{{ log.acao }}</td>
-                    <td>{{ log.detalhe }}</td>
-                    <td style="color:#64748b; font-size:13px;">{{ log.data_registro }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</body>
-</html>
+        <label>Chave de Verificação Secundária (Mestra):</label>
+        <input type="password" name="verificacao_seguranca" required placeholder="Digite a chave para autorizar a alteração...">
+
+        <div class="admin-actions-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px;">
+            <button type="submit" name="acao" value="alterar_dados" style="background: #2563eb; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">Atualizar Dados</button>
+            <button type="submit" name="acao" value="restringir_temp" style="background: #d97706; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">Bloqueio Temporário</button>
+            <button type="submit" name="acao" value="excluir" style="background: #dc2626; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;" onclick="return confirm('Tem certeza absoluta que deseja EXCLUIR este usuário permanentemente do banco de dados?');">Excluir Usuário</button>
+        </div>
+    </form>
+</div>
