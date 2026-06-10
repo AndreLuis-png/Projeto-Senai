@@ -1,12 +1,3 @@
-# ==============================================================================
-# 💡 NOTA DE INSTALAÇÃO:
-# Se mudar de computador ou precisar reinstalar as dependências do projeto,
-# abra o seu terminal e execute:
-#
-# pip install Flask PyMySQL
-# python app.py
-# ==============================================================================
-
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import pymysql
 import pymysql.cursors
@@ -33,7 +24,7 @@ class MySQLWrapper:
 
 mysql = MySQLWrapper()
 
-# 🛡️ FUNÇÃO PADRONIZADORA DE TEXTO (Remove acentos e aplica Capitalize)
+# 🛡️ FUNÇÃO PADRONIZADORA DE TEXTO
 def normalizar_texto(texto):
     if not texto:
         return ""
@@ -97,7 +88,6 @@ def lobby():
     conn = mysql.connection
     cursor = conn.cursor()
     
-    # LEFT JOIN para verificar a existência de mídias cadastradas na nova tabela
     query_base = """
         SELECT e.id_produto, e.nome, e.area, e.quantidade, e.descricao, 
                CASE WHEN m.link_url IS NOT NULL THEN 1 ELSE 0 END as possui_imagem
@@ -116,7 +106,7 @@ def lobby():
     
     return render_template('lobby.html', estoque=estoque, area_atual=area_filtrada)
 
-# 🌐 ROTA DE API: RETORNA O LINK DA IMAGEM EM JSON PARA CARREGAMENTO ASSÍNCRONO
+# 🌐 ROTA DE API: RETORNA O LINK DA IMAGEM EM JSON FOR THE JAVASCRIPT
 @app.route('/api/obter_link_imagem/<id_produto>')
 def obter_link_imagem(id_produto):
     if 'usuario' not in session:
@@ -182,7 +172,6 @@ def insercao():
             else:
                 novo_id = f"{prefixo}0001"
                 
-            # CORRIGIDO AQUI: Alterado o antigo 'quantity' para 'quantidade' na linha abaixo
             cursor.execute(
                 "INSERT INTO estoque (id_produto, nome, area, quantidade, descricao) VALUES (%s, %s, %s, %s, %s)",
                 (novo_id, nome, area_solicitada, quantidade, descricao)
@@ -256,7 +245,6 @@ def editar(id_produto):
                     (id_final, novo_nome, nova_area, nova_qtd, nova_descricao, id_produto)
                 )
                 
-                # Sincroniza os links na tabela associativa midia_produtos
                 cursor.execute("DELETE FROM midia_produtos WHERE id_produto = %s", (id_final,))
                 if novo_link:
                     cursor.execute("INSERT INTO midia_produtos (id_produto, link_url) VALUES (%s, %s)", (id_final, novo_link))
@@ -295,7 +283,7 @@ def retirada():
         nome_digitado = normalizar_texto(request.form.get('nome_item_busca'))
         quantidade_retirar = int(request.form.get('quantidade', 0))
         
-        cursor.execute("SELECT id_produto, nome, quantity, quantidade FROM estoque WHERE nome = %s", (nome_digitado,))
+        cursor.execute("SELECT id_produto, nome, quantidade FROM estoque WHERE nome = %s", (nome_digitado,))
         produto = cursor.fetchone()
         
         if produto:
@@ -361,7 +349,7 @@ def admin_panel():
                         flash('Este login já existe no sistema.', 'error')
                 elif acao == 'alterar_dados':
                     cursor.execute("UPDATE usuarios SET senha = %s WHERE login = %s", (nova_senha, funcionario))
-                    flash(f'Senha de {funcionario} updated!', 'success')
+                    flash(f'Senha de {funcionario} atualizada!', 'success')
                 elif acao == 'restringir_temp':
                     periodo_bloqueio = request.form.get('tempo_bloqueio', 'Não especificado')
                     cursor.execute("UPDATE usuarios SET status = 'suspenso_temp' WHERE login = %s", (funcionario,))

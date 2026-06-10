@@ -277,3 +277,138 @@ tr:hover {
 .admin-action-btn:hover {
     background-color: var(--plum-dark);
 }
+
+/* ==============================================================================
+   🛠️ SEÇÃO COMPLEMENTAR: ESTILIZAÇÃO DO PAINEL ADMINISTRATIVO 
+   ============================================================================== */
+
+/* Layout em duas colunas responsivas para o painel */
+.admin-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+    .admin-grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Cartões internos da área administrativa */
+.card-admin {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.card-admin h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 16px;
+    border-bottom: 2px solid var(--deep-purple);
+    padding-bottom: 6px;
+    color: var(--deep-purple);
+}
+
+/* Caixa interna de parâmetros para restrição temporária */
+.lock-parameters-box {
+    border: 1px solid var(--border-color); 
+    padding: 15px; 
+    margin: 15px 0; 
+    border-radius: 6px; 
+    background: var(--bg-main);
+}
+
+.lock-title {
+    color: #475569; 
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.lock-subtitle {
+    color: #64748b; 
+    display: block; 
+    margin-top: -8px; 
+    margin-bottom: 5px;
+    font-size: 11px;
+}
+
+/* Grid de botões triplos de ação */
+.admin-actions-grid {
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px; 
+    margin-top: 15px;
+}
+
+/* Botões do grid administrativo */
+.btn-admin-blue {
+    background: #2563eb; 
+    color: white; 
+    border: none; 
+    padding: 10px; 
+    border-radius: 4px; 
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-admin-orange {
+    background: #d97706; 
+    color: white; 
+    border: none; 
+    padding: 10px; 
+    border-radius: 4px; 
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-admin-red {
+    background: #dc2626; 
+    color: white; 
+    border: none; 
+    padding: 10px; 
+    border-radius: 4px; 
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-admin-blue:hover, .btn-admin-orange:hover, .btn-admin-red:hover {
+    opacity: 0.9;
+}
+
+/* Caixa interna rolável para logs de auditoria */
+.logs-scroll-box {
+    max-height: 620px;
+    overflow-y: auto;
+    padding-right: 10px;
+    border: 1px solid var(--border-color);
+    background: #fafafa;
+    border-radius: 6px;
+}
+
+/* Elementos de linha individuais dos logs */
+.log-item-line {
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+}
+.log-item-line:nth-child(even) {
+    background: #f8fafc;
+}
+
+.log-meta {
+    color: #475569;
+    font-family: monospace;
+    display: block;
+}
+
+.log-detail-text {
+    margin: 5px 0 0 0;
+    color: #0f172a;
+    font-weight: 500;
+}

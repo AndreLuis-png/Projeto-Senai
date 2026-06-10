@@ -1,29 +1,112 @@
-<div class="card_admin">
-    <h3>Gerenciar Funcionários Existentes</h3>
-    <form method="POST">
-        <label>Selecione o Usuário:</label>
-        <select name="funcionario" required>
-            {% for user in usuarios %}
-                <option value="{{ user.login }}">{{ user.login }} [Perfis: {{ user.role }} | Status: {{ user.status }}]</option>
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Administrativo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="admin-header">
+        <h1>Painel do Almoxarifado — Módulo Admin</h1>
+        <p>Administrador: <strong>{{ session['usuario'] }}</strong></p>
+        <nav>
+            <a href="{{ url_for('lobby') }}">🔎 Consultar Stock</a> 
+            <a href="{{ url_for('insercao') }}">📥 Entrada de Material</a> 
+            <a href="{{ url_for('retirada') }}">📤 Saída / Baixa</a> 
+            <a href="{{ url_for('admin_panel') }}" class="active">🛠️ Administração</a>
+            <a href="{{ url_for('logout') }}" style="margin-left: auto; background: rgba(239,68,68,0.2);">Sair</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>Controle Geral de Utilizadores e Auditoria</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, msg in messages %}
+              <div class="flash-message {% if category == 'success' %}flash-success{% else %}flash-error{% endif %}">
+                {{ msg }}
+              </div>
             {% endfor %}
-        </select>
+          {% endif %}
+        {% endwith %}
 
-        <label>Nova Senha (Apenas se for alterar):</label>
-        <input type="password" name="nova_senha" placeholder="Digite uma nova senha se aplicável...">
+        <div class="admin-grid-layout">
+            
+            <div class="admin-forms-column">
+                
+                <div class="card-admin">
+                    <h3>Gerenciar Funcionários Existentes</h3>
+                    <form method="POST">
+                        <label>Selecione o Usuário:</label>
+                        <select name="funcionario" required>
+                            {% for user in usuarios %}
+                                <option value="{{ user.login }}">{{ user.login }} [Perfis: {{ user.role }} | Status: {{ user.status }}]</option>
+                            {% endfor %}
+                        </select>
 
-        <div style="border: 1px solid #334155; padding: 15px; margin: 15px 0; border-radius: 6px; background: rgba(30,41,59,0.5);">
-            <label style="color: #94a3b8; font-weight: bold;">⏱️ Parâmetros para Restrição Temporária:</label>
-            <input type="text" name="tempo_bloqueio" placeholder="Ex: 5 dias, 24 horas, Até segunda-feira...">
-            <small style="color: #64748b; display: block; margin-top: 5px;">Este período será registrado nos logs de auditoria do sistema.</small>
+                        <label>Nova Senha (Apenas se for alterar):</label>
+                        <input type="password" name="nova_senha" placeholder="Digite uma nova senha se aplicável...">
+
+                        <div class="lock-parameters-box">
+                            <label class="lock-title">⏱️ Parâmetros para Restrição Temporária:</label>
+                            <input type="text" name="tempo_bloqueio" placeholder="Ex: 5 dias, 24 horas, Até segunda-feira...">
+                            <small class="lock-subtitle">Este período será registrado nos logs de auditoria do sistema.</small>
+                        </div>
+
+                        <label>Chave de Verificação Secundária (Mestra):</label>
+                        <input type="password" name="verificacao_seguranca" required placeholder="Digite a chave para autorizar a alteração...">
+
+                        <div class="admin-actions-grid">
+                            <button type="submit" name="acao" value="alterar_dados" class="btn-admin-blue">Atualizar Dados</button>
+                            <button type="submit" name="acao" value="restringir_temp" class="btn-admin-orange">Bloqueio Temp.</button>
+                            <button type="submit" name="acao" value="excluir" class="btn-admin-red" onclick="return confirm('Tem certeza absoluta que deseja EXCLUIR este usuário permanentemente do banco de dados?');">Excluir Usuário</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card-admin" style="margin-top: 25px;">
+                    <h3>Cadastrar Novo Utilizador</h3>
+                    <form method="POST">
+                        <input type="hidden" name="acao" value="cadastrar">
+                        
+                        <label>Nome do Funcionário (Login):</label>
+                        <input type="text" name="funcionario" required placeholder="Ex: joao.silva">
+
+                        <label>Senha Provisória:</label>
+                        <input type="password" name="nova_senha" required placeholder="Digite a senha inicial...">
+
+                        <label>Nível de Permissão:</label>
+                        <select name="tipo_permissao">
+                            <option value="user">Operador Comum (user)</option>
+                            <option value="admin">Administrador Geral (admin)</option>
+                        </select>
+
+                        <label>Chave de Verificação Secundária (Mestra):</label>
+                        <input type="password" name="verificacao_seguranca" required placeholder="Digite a chave master para autorizar...">
+
+                        <button type="submit" class="admin-action-btn" style="width: 100%;">Criar Perfil no Sistema</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-logs-column">
+                <div class="card-admin text-logs-container">
+                    <h3>Histórico de Logs de Auditoria</h3>
+                    <div class="logs-scroll-box">
+                        {% for log in historico %}
+                            <div class="log-item-line">
+                                <span class="log-meta">[{{ log.data_registro }}] <strong>{{ log.usuario }}</strong> realizou <u>{{ log.acao }}</u>:</span>
+                                <p class="log-detail-text">{{ log.detalhe }}</p>
+                            </div>
+                        {% else %}
+                            <p style="color: var(--gray-muted); text-align: center; font-style: italic; padding: 20px;">Nenhum registo de atividade encontrado.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
         </div>
-
-        <label>Chave de Verificação Secundária (Mestra):</label>
-        <input type="password" name="verificacao_seguranca" required placeholder="Digite a chave para autorizar a alteração...">
-
-        <div class="admin-actions-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px;">
-            <button type="submit" name="acao" value="alterar_dados" style="background: #2563eb; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">Atualizar Dados</button>
-            <button type="submit" name="acao" value="restringir_temp" style="background: #d97706; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">Bloqueio Temporário</button>
-            <button type="submit" name="acao" value="excluir" style="background: #dc2626; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;" onclick="return confirm('Tem certeza absoluta que deseja EXCLUIR este usuário permanentemente do banco de dados?');">Excluir Usuário</button>
-        </div>
-    </form>
-</div>
+    </div>
+</body>
+</html>
