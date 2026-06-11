@@ -10,7 +10,7 @@
         <h1>Painel do Almoxarifado — Módulo Admin</h1>
         <p>Administrador: <strong>{{ session['usuario'] }}</strong></p>
         <nav>
-            <a href="{{ url_for('lobby') }}">🔎 Consultar Stock</a> 
+            <a href="{{ url_for('lobby') }}">🔎 Consultar Estoque</a> 
             <a href="{{ url_for('insercao') }}">📥 Entrada de Material</a> 
             <a href="{{ url_for('retirada') }}">📤 Saída / Baixa</a> 
             <a href="{{ url_for('admin_panel') }}" class="active">🛠️ Administração</a>

@@ -51,7 +51,7 @@
         <h1>Painel do Almoxarifado</h1>
         <p>Operador: <strong>{{ session['usuario'] }}</strong></p>
         <nav>
-            <a href="{{ url_for('lobby') }}" class="active">🔎 Consultar Stock</a> 
+            <a href="{{ url_for('lobby') }}" class="active">🔎 Consultar Estoque</a> 
             <a href="{{ url_for('insercao') }}">📥 Entrada de Material</a> 
             <a href="{{ url_for('retirada') }}">📤 Saída / Baixa</a> 
             {% if session['is_admin'] %}
@@ -62,7 +62,7 @@
     </header>
 
     <div class="container" style="max-width: 1200px; margin-top: 30px;">
-        <h2>Visão Geral do Stock</h2>
+        <h2>Visão Geral do Estoque</h2>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}

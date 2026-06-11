@@ -268,7 +268,7 @@ tr:hover {
 
 /* Estilos Adicionais do Painel Administrativo */
 .admin-header {
-    background-color: var(--deep-purple) !important;
+    background-color: var(--primary-blue) !important;
 }
 
 .admin-action-btn {

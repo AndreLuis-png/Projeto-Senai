@@ -10,7 +10,7 @@
         <h1>Painel do Almoxarifado</h1>
         <p>Operador: <strong>{{ session['usuario'] }}</strong></p>
         <nav>
-            <a href="{{ url_for('lobby') }}">🔎 Consultar Stock</a> 
+            <a href="{{ url_for('lobby') }}">🔎 Consultar Estoque</a> 
             <a href="{{ url_for('insercao') }}">📥 Entrada de Material</a> 
             <a href="{{ url_for('retirada') }}" class="active">📤 Saída / Baixa</a> 
             {% if session['is_admin'] %}
