@@ -11,10 +11,9 @@ db_config = {
     'host': '127.0.0.1',       
     'port': 3306,              
     'user': 'root',            
-    'password': 'root',            
+    'password': '',            
     'db': 'almoxarifado_db',   
-    'cursorclass': pymysql.cursors.DictCursor,
-    'autocommit': True         
+    'cursorclass': pymysql.cursors.DictCursor,       
 }
 
 class MySQLWrapper:
@@ -88,17 +87,17 @@ def lobby():
     conn = mysql.connection
     cursor = conn.cursor()
     
+    # CORREÇÃO: Puxa diretamente do estoque e verifica se o campo 'link_midia' não está nulo ou vazio
     query_base = """
-        SELECT e.id_produto, e.nome, e.area, e.quantidade, e.descricao, 
-               CASE WHEN m.link_url IS NOT NULL THEN 1 ELSE 0 END as possui_imagem
-        FROM estoque e
-        LEFT JOIN midia_produtos m ON e.id_produto = m.id_produto
+        SELECT id_produto, nome, area, quantidade, descricao, 
+               CASE WHEN link_midia IS NOT NULL AND link_midia != '' THEN 1 ELSE 0 END as possui_imagem
+        FROM estoque
     """
     
     if area_filtrada and area_filtrada != 'Todos':
-        cursor.execute(query_base + " WHERE e.area = %s ORDER BY e.id_produto ASC", (area_filtrada,))
+        cursor.execute(query_base + " WHERE area = %s ORDER BY id_produto ASC", (area_filtrada,))
     else:
-        cursor.execute(query_base + " ORDER BY e.id_produto ASC")
+        cursor.execute(query_base + " ORDER BY id_produto ASC")
         
     estoque = cursor.fetchall()
     cursor.close()
@@ -114,13 +113,15 @@ def obter_link_imagem(id_produto):
         
     conn = mysql.connection
     cursor = conn.cursor()
-    cursor.execute("SELECT link_url FROM midia_produtos WHERE id_produto = %s LIMIT 1", (id_produto,))
-    midia = cursor.fetchone()
-    cursor.close()
-    conn.close()
     
-    if midia and midia['link_url']:
-        return jsonify({'link_url': midia['link_url']})
+    # CORREÇÃO: Busca direta da coluna 'link_midia' na tabela 'estoque'
+    cursor.execute("SELECT link_midia FROM estoque WHERE id_produto = %s", (id_produto,))
+    produto = cursor.fetchone()
+    cursor.close()
+    conn.close() 
+    
+    if produto and produto['link_midia']:
+        return jsonify({'link_url': produto['link_midia']})
     
     return jsonify({'error': 'Imagem não encontrada'}), 404
 
@@ -150,12 +151,12 @@ def insercao():
         if item_existente:
             target_id = item_existente['id_produto']
             nova_qtd_total = item_existente['quantidade'] + quantidade
-            cursor.execute("UPDATE estoque SET quantidade = %s WHERE id_produto = %s", (nova_qtd_total, target_id))
             
+            # CORREÇÃO: Se enviou um novo link no reabastecimento, atualiza também a coluna de mídia do produto
             if link_imagem:
-                cursor.execute("SELECT id FROM midia_produtos WHERE id_produto = %s", (target_id,))
-                if not cursor.fetchone():
-                    cursor.execute("INSERT INTO midia_produtos (id_produto, link_url) VALUES (%s, %s)", (target_id, link_imagem))
+                cursor.execute("UPDATE estoque SET quantidade = %s, link_midia = %s WHERE id_produto = %s", (nova_qtd_total, link_imagem, target_id))
+            else:
+                cursor.execute("UPDATE estoque SET quantidade = %s WHERE id_produto = %s", (nova_qtd_total, target_id))
             
             detalhe_log = f"Reabasteceu '{nome}' (ID: {target_id}). Adicionado: {quantidade} un. Novo Saldo: {nova_qtd_total} un."
             cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Inserção', %s)", (session['usuario'], detalhe_log))
@@ -172,13 +173,11 @@ def insercao():
             else:
                 novo_id = f"{prefixo}0001"
                 
+            # CORREÇÃO: Salvando a string de mídia na nova coluna link_midia durante a criação do novo produto
             cursor.execute(
-                "INSERT INTO estoque (id_produto, nome, area, quantidade, descricao) VALUES (%s, %s, %s, %s, %s)",
-                (novo_id, nome, area_solicitada, quantidade, descricao)
+                "INSERT INTO estoque (id_produto, nome, area, quantidade, descricao, link_midia) VALUES (%s, %s, %s, %s, %s, %s)",
+                (novo_id, nome, area_solicitada, quantidade, descricao, link_imagem if link_imagem else None)
             )
-            
-            if link_imagem:
-                cursor.execute("INSERT INTO midia_produtos (id_produto, link_url) VALUES (%s, %s)", (novo_id, link_imagem))
                 
             detalhe_log = f"Cadastrou NOVO item '{nome}' (ID: {novo_id}) com stock inicial de {quantidade} un."
             cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Inserção', %s)", (session['usuario'], detalhe_log))
@@ -240,14 +239,11 @@ def editar(id_produto):
                     else:
                         id_final = f"{prefixo}0001"
                 
+                # CORREÇÃO: Atualiza os dados comuns juntamente com o link_midia unificado na tabela estoque
                 cursor.execute(
-                    "UPDATE estoque SET id_produto = %s, nome = %s, area = %s, quantidade = %s, descricao = %s WHERE id_produto = %s",
-                    (id_final, novo_nome, nova_area, nova_qtd, nova_descricao, id_produto)
+                    "UPDATE estoque SET id_produto = %s, nome = %s, area = %s, quantidade = %s, descricao = %s, link_midia = %s WHERE id_produto = %s",
+                    (id_final, novo_nome, nova_area, nova_qtd, nova_descricao, novo_link if novo_link else None, id_produto)
                 )
-                
-                cursor.execute("DELETE FROM midia_produtos WHERE id_produto = %s", (id_final,))
-                if novo_link:
-                    cursor.execute("INSERT INTO midia_produtos (id_produto, link_url) VALUES (%s, %s)", (id_final, novo_link))
                     
                 detalhes_mudanca = f"Editou item ID {id_produto}. Antigo: [{antigo['nome']}]. Novo: [ID: {id_final}, {novo_nome}]."
                 cursor.execute("INSERT INTO historico_logs (usuario, acao, detalhe) VALUES (%s, 'Alteração', %s)", (session['usuario'], detalhes_mudanca))
@@ -257,12 +253,11 @@ def editar(id_produto):
         conn.close()
         return redirect(url_for('lobby'))
         
+    # CORREÇÃO: Carregando a página de edição puxando o link diretamente da tabela estoque
     cursor.execute("SELECT * FROM estoque WHERE id_produto = %s", (id_produto,))
     produto = cursor.fetchone()
     
-    cursor.execute("SELECT link_url FROM midia_produtos WHERE id_produto = %s LIMIT 1", (id_produto,))
-    midia = cursor.fetchone()
-    link_atual = midia['link_url'] if midia else ''
+    link_atual = produto['link_midia'] if produto and produto['link_midia'] else ''
     
     cursor.close()
     conn.close()
@@ -283,6 +278,7 @@ def retirada():
         nome_digitado = normalizar_texto(request.form.get('nome_item_busca'))
         quantidade_retirar = int(request.form.get('quantidade', 0))
         
+        # CORREÇÃO: Removido o "quantity=" que estava quebrando o comando SQL
         cursor.execute("SELECT id_produto, nome, quantidade FROM estoque WHERE nome = %s", (nome_digitado,))
         produto = cursor.fetchone()
         
