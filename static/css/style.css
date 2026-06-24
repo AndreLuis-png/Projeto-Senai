@@ -92,7 +92,6 @@ nav a:hover, nav a.active {
     font-weight: 600;
 }
 
-/* Modificações específicas para a barra de filtros no Lobby */
 .filter-bar {
     background: var(--dark-blue-gray);
     padding: 15px;
@@ -134,7 +133,6 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.25);
 }
 
-/* Botões baseados no Laranja e Amarelos */
 button, .btn {
     background: var(--accent-orange);
     color: var(--primary-blue);
@@ -166,7 +164,6 @@ button:hover, .btn:hover {
     color: var(--primary-blue);
 }
 
-/* Tabelas */
 table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -199,7 +196,6 @@ tr:hover {
     background: rgba(25, 42, 107, 0.03); 
 }
 
-/* Crachás / Badges das categorias usando a paleta de Amarelos/Laranjas */
 .badge { 
     padding: 6px 12px; 
     border-radius: 12px; 
@@ -219,8 +215,15 @@ tr:hover {
     background: var(--yellow-bright); 
     color: var(--primary-blue); 
 }
+.badge-success {
+    background: #dcfce7;
+    color: var(--success);
+}
+.badge-danger {
+    background: #fee2e2;
+    color: var(--error);
+}
 
-/* Alertas de Mensagens Flash */
 .flash-message { 
     padding: 12px; 
     border-radius: 6px; 
@@ -239,7 +242,6 @@ tr:hover {
     border: 1px solid #86efac; 
 }
 
-/* Layout Customizado para a Tela de Login */
 .login-body { 
     display: flex; 
     justify-content: center; 
@@ -266,7 +268,6 @@ tr:hover {
     margin-bottom: 25px;
 }
 
-/* Estilos Adicionais do Painel Administrativo */
 .admin-header {
     background-color: var(--primary-blue) !important;
 }
@@ -278,11 +279,6 @@ tr:hover {
     background-color: var(--plum-dark);
 }
 
-/* ==============================================================================
-   🛠️ SEÇÃO COMPLEMENTAR: ESTILIZAÇÃO DO PAINEL ADMINISTRATIVO 
-   ============================================================================== */
-
-/* Layout em duas colunas responsivas para o painel */
 .admin-grid-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -296,7 +292,6 @@ tr:hover {
     }
 }
 
-/* Cartões internos da área administrativa */
 .card-admin {
     background: #ffffff;
     border: 1px solid var(--border-color);
@@ -314,7 +309,6 @@ tr:hover {
     color: var(--deep-purple);
 }
 
-/* Caixa interna de parâmetros para restrição temporária */
 .lock-parameters-box {
     border: 1px solid var(--border-color); 
     padding: 15px; 
@@ -338,7 +332,6 @@ tr:hover {
     font-size: 11px;
 }
 
-/* Grid de botões triplos de ação */
 .admin-actions-grid {
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
@@ -346,7 +339,6 @@ tr:hover {
     margin-top: 15px;
 }
 
-/* Botões do grid administrativo */
 .btn-admin-blue {
     background: #2563eb; 
     color: white; 
@@ -381,7 +373,6 @@ tr:hover {
     opacity: 0.9;
 }
 
-/* Caixa interna rolável para logs de auditoria */
 .logs-scroll-box {
     max-height: 620px;
     overflow-y: auto;
@@ -391,7 +382,6 @@ tr:hover {
     border-radius: 6px;
 }
 
-/* Elementos de linha individuais dos logs */
 .log-item-line {
     padding: 12px;
     border-bottom: 1px solid #f1f5f9;
@@ -411,4 +401,12 @@ tr:hover {
     margin: 5px 0 0 0;
     color: #0f172a;
     font-weight: 500;
+}
+
+.container-imagem-oculta img {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid var(--accent-orange);
+}
+.container-imagem-oculta img:hover {
+    transform: scale(1.03);
 }
