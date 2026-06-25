@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS historico_logs (
 -- Define a Chave Mestra para o Painel Administrativo
 -- Altere 'SUA_CHAVE_MESTRA_AQUI' para o código que você usa na verificação secundária
 INSERT INTO config_admin (chave_secundaria) 
-VALUES ('SUA_CHAVE_MESTRA_AQUI');
+VALUES ('ROCAMBOLE');
 
 -- Garante a remoção de qualquer usuário antigo 'admin' para evitar conflitos
 DELETE FROM usuarios WHERE login = 'admin';
@@ -59,13 +59,11 @@ DELETE FROM usuarios WHERE login = 'admin';
 INSERT INTO usuarios (login, senha, status, role) 
 VALUES ('admin', '$2b$12$Z0w990wYvA3xAnEwbyx90ex.vD2F17XJpC7q9Z2m10v8zZp0y6NqC', 'ativo', 'admin');
 
+INSERT INTO usuarios (login, senha, status, role) #--ESSE USUÁRIO FUNCIONA, OS OUTROS AINDA NÃO
+VALUES ('andre', '$2a$12$iaj8/rlNnch3bV0WlT/BNO.nQrFOUgoJ7KvCgsLdaaO/hySJbDgSa', 'ativo', 'admin');
+
+
 SELECT * FROM estoque;
 SELECT * FROM config_admin;
 SELECT * FROM historico_logs;
 SELECT * FROM usuarios;
-
-USE almoxarifado_db;
-DELETE FROM usuarios WHERE login != 'admin';
-
-INSERT INTO usuarios (login, senha, status, role) #--ESSE USUÁRIO FUNCIONA, OS OUTROS AINDA NÃO
-VALUES ('andre', '$2a$12$iaj8/rlNnch3bV0WlT/BNO.nQrFOUgoJ7KvCgsLdaaO/hySJbDgSa', 'ativo', 'admin');
