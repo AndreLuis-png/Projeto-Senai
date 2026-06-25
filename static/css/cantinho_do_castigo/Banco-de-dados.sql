@@ -56,11 +56,17 @@ DELETE FROM usuarios WHERE login = 'admin';
 
 -- Criação do Administrador Padrão
 -- O hash abaixo corresponde estritamente à senha em texto puro: admin
-INSERT INTO usuarios (login, senha, status, role) 
-VALUES ('admin', '$2b$12$Z0w990wYvA3xAnEwbyx90ex.vD2F17XJpC7q9Z2m10v8zZp0y6NqC', 'ativo', 'admin');
+INSERT INTO usuarios (login, senha, status, role) #senha = admin
+VALUES ('admin', '$2a$12$TyKbVE6G425lA7ko/IgwoOcR.Uc4RCbcvGj/ftZkopSNhhlelM8Zi', 'ativo', 'admin');
 
-INSERT INTO usuarios (login, senha, status, role) #--ESSE USUÁRIO FUNCIONA, OS OUTROS AINDA NÃO
+INSERT INTO usuarios (login, senha, status, role) #senha = 123
 VALUES ('andre', '$2a$12$iaj8/rlNnch3bV0WlT/BNO.nQrFOUgoJ7KvCgsLdaaO/hySJbDgSa', 'ativo', 'admin');
+
+USE almoxarifado_db;
+
+UPDATE usuarios 
+SET senha = '$2a$12$TyKbVE6G425lA7ko/IgwoOcR.Uc4RCbcvGj/ftZkopSNhhlelM8Zi'
+WHERE login = 'admin';
 
 
 SELECT * FROM estoque;
