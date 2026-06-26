@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <title>Painel Administrativo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        input[type="text"], datalist option {
+            text-transform: none !important;
+        }
+        .btn-admin-green {
+            background-color: #10b981 !important;
+            color: white !important;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-admin-green:hover {
+            background-color: #059669 !important;
+        }
+    </style>
 </head>
 <body>
     <header class="admin-header">
@@ -38,12 +55,15 @@
                 <div class="card-admin">
                     <h3>Gerenciar Funcionários Existentes</h3>
                     <form method="POST">
-                        <label>Selecione o Usuário:</label>
-                        <select name="funcionario" required>
+                        <label>Selecione ou Digite o Usuário:</label>
+                        <input type="text" name="funcionario" list="usuarios-existentes" required placeholder="Procure pelo login do operador..." autocomplete="off">
+                        <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 15px;">💡 Use a lista suspensa ou digite o nome completo.</small>
+                        
+                        <datalist id="usuarios-existentes">
                             {% for user in usuarios %}
-                                <option value="{{ user.login }}">{{ user.login }} [Perfis: {{ user.role }} | Status: {{ user.status }}]</option>
+                                <option value="{{ user.login }}">
                             {% endfor %}
-                        </select>
+                        </datalist>
 
                         <label>Nova Senha (Apenas se for alterar):</label>
                         <input type="password" name="nova_senha" placeholder="Digite uma nova senha se aplicável...">
@@ -57,9 +77,10 @@
                         <label>Chave de Verificação Secundária (Mestra):</label>
                         <input type="password" name="verificacao_seguranca" required placeholder="Digite a chave para autorizar a alteração...">
 
-                        <div class="admin-actions-grid">
+                        <div class="admin-actions-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <button type="submit" name="acao" value="alterar_dados" class="btn-admin-blue">Atualizar Dados</button>
                             <button type="submit" name="acao" value="restringir_temp" class="btn-admin-orange">Bloqueio Temp.</button>
+                            <button type="submit" name="acao" value="desbloquear" class="btn-admin-green">🟢 Reativar / Desbloquear</button>
                             <button type="submit" name="acao" value="excluir" class="btn-admin-red" onclick="return confirm('Tem certeza absoluta que deseja EXCLUIR este usuário permanentemente do banco de dados?');">Excluir Usuário</button>
                         </div>
                     </form>
@@ -107,6 +128,35 @@
             </div>
 
         </div>
+
+        <div class="card-admin" style="margin-top: 30px;">
+            <h3>📋 Status de Permissão de Operadores</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; background: white;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; text-align: left;">
+                        <th style="padding: 12px; border-bottom: 2px solid #cbd5e1;">Nome de Usuário (Login)</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #cbd5e1;">Nível de Acesso</th>
+                        <th style="padding: 12px; border-bottom: 2px solid #cbd5e1;">Situação no Banco</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in usuarios %}
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">{{ user.login }}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><code style="background: #f1f5f9; padding: 2px 6px; border-radius:4px;">{{ user.role }}</code></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                            {% if user.status == 'ativo' %}
+                                <span style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block;">Ativo</span>
+                            {% else %}
+                                <span style="background-color: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block;">Bloqueado / Suspenso</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
     </div>
 </body>
 </html>

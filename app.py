@@ -12,16 +12,12 @@ app.secret_key = os.urandom(24)
 # Configurações do Banco de Dados
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''  # Deixe vazio para XAMPP ou preencha com a sua senha
+app.config['MYSQL_PASSWORD'] = ''  
 app.config['MYSQL_DB'] = 'almoxarifado_db'
 
 mysql = MySQL(app)
 
-# -----------------------------------------------------------------------------
-# FUNÇÕES AUXILIARES / TRATAMENTO DE TEXTO E ID DINÂMICO
-# -----------------------------------------------------------------------------
 def limpar_texto(texto):
-    """Remove acentos e deixa apenas a primeira letra da string em maiúscula."""
     if not texto:
         return ""
     nfkd_form = unicodedata.normalize('NFKD', texto)
@@ -30,7 +26,6 @@ def limpar_texto(texto):
     return texto_limpo.capitalize()
 
 def gerar_proximo_id(area):
-    """Gera o próximo ID de 5 dígitos preenchendo lacunas deixadas por exclusões."""
     prefixos = {'Geral': '0', 'Mecânica': '1', 'Elétrica': '2'}
     prefixo = prefixos.get(area, '0')
     
@@ -43,7 +38,6 @@ def gerar_proximo_id(area):
     ids_existentes = [int(row['id_produto']) for row in cursor.fetchall()]
     
     inicio_sequencia = int(prefixo + "0001")
-    
     proximo_numero = inicio_sequencia
     while proximo_numero in ids_existentes:
         proximo_numero += 1
@@ -65,8 +59,6 @@ def login():
         
         if account:
             senha_banco = account.get('senha')
-            
-            # Validação robusta codificando string para bytes antes da comparação
             if senha_banco and bcrypt.checkpw(senha.encode('utf-8'), senha_banco.encode('utf-8')):
                 if account.get('status') != 'ativo':
                     flash(f"Este utilizador encontra-se suspenso/bloqueado. Status: {account.get('status')}.")
@@ -89,31 +81,42 @@ def logout():
     return redirect(url_for('login'))
 
 # -----------------------------------------------------------------------------
-# VISÃO GERAL: CONSULTA DE ESTOQUE (LOBBY)
+# CONSULTA DE ESTOQUE (LOBBY COM BARRA DE PESQUISA)
 # -----------------------------------------------------------------------------
-@app.route('/lobby')
-@app.route('/lobby/<area_filtro>')
+@app.route('/lobby', methods=['GET'])
+@app.route('/lobby/<area_filtro>', methods=['GET'])
 def lobby(area_filtro='Todos'):
     if 'logged_in' not in session:
         return redirect(url_for('login'))
         
+    termo_pesquisa = request.args.get('pesquisa', '').strip()
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
-    if area_filtro == 'Todos':
-        cursor.execute("""
-            SELECT id_produto, nome, area, quantidade, descricao, 
-            CASE WHEN link_midia IS NOT NULL AND link_midia != '' THEN 1 ELSE 0 END as possui_imagem 
-            FROM estoque ORDER BY id_produto ASC
-        """)
-    else:
-        cursor.execute("""
-            SELECT id_produto, nome, area, quantidade, descricao, 
-            CASE WHEN link_midia IS NOT NULL AND link_midia != '' THEN 1 ELSE 0 END as possui_imagem 
-            FROM estoque WHERE area = %s ORDER BY id_produto ASC
-        """, (area_filtro,))
+    query = """
+        SELECT id_produto, nome, area, quantidade, descricao, 
+        CASE WHEN link_midia IS NOT NULL AND link_midia != '' THEN 1 ELSE 0 END as possui_imagem 
+        FROM estoque WHERE 1=1
+    """
+    params = []
+    
+    if area_filtro != 'Todos':
+        query += " AND area = %s"
+        params.append(area_filtro)
         
+    if termo_pesquisa:
+        query += " AND nome LIKE %s"
+        params.append('%' + termo_pesquisa + '%')
+        
+    query += " ORDER BY id_produto ASC"
+    
+    cursor.execute(query, tuple(params))
     itens_estoque = cursor.fetchall()
-    return render_template('lobby.html', estoque=itens_estoque, area_atual=area_filtro)
+    
+    # Busca todas as sugestões de nomes para o datalist da pesquisa
+    cursor.execute("SELECT DISTINCT nome FROM estoque")
+    sugestoes = [row['nome'] for row in cursor.fetchall()]
+    
+    return render_template('lobby.html', estoque=itens_estoque, area_atual=area_filtro, sugestoes=sugestoes, termo_pesquisa=termo_pesquisa)
 
 @app.route('/api/obter_link_imagem/<id_produto>')
 def obter_link_imagem(id_produto):
@@ -123,13 +126,10 @@ def obter_link_imagem(id_produto):
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute("SELECT link_midia FROM estoque WHERE id_produto = %s", (id_produto,))
     produto = cursor.fetchone()
-    
-    if produto:
-        return jsonify({'link_url': produto['link_midia']})
-    return jsonify({'link_url': None})
+    return jsonify({'link_url': produto['link_midia'] if produto else None})
 
 # -----------------------------------------------------------------------------
-# MOVIMENTAÇÕES E EDIÇÃO DE PRODUTOS
+# MOVIMENTAÇÕES E EDIÇÃO
 # -----------------------------------------------------------------------------
 @app.route('/insercao', methods=['GET', 'POST'])
 def insercao():
@@ -170,8 +170,6 @@ def insercao():
         
     cursor.execute("SELECT DISTINCT nome FROM estoque")
     sugestoes = [row['nome'] for row in cursor.fetchall()]
-    
-    # Corrigido aqui para 'insercao.html' (sem acento)
     return render_template('insercao.html', sugestoes=sugestoes)
 
 @app.route('/retirada', methods=['GET', 'POST'])
@@ -182,30 +180,31 @@ def retirada():
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
     if request.method == 'POST':
-        id_produto = request.form['id_produto']
+        nome_selecionado = request.form['nome']
         quantidade_retirar = int(request.form['quantidade'])
         
-        cursor.execute("SELECT * FROM estoque WHERE id_produto = %s", (id_produto,))
+        # Busca o produto pelo nome de forma flexível
+        cursor.execute("SELECT * FROM estoque WHERE nome = %s AND quantidade >= %s", (nome_selecionado, quantidade_retirar))
         produto = cursor.fetchone()
         
-        if produto and produto['quantidade'] >= quantidade_retirar:
+        if produto:
             nova_qtd = produto['quantidade'] - quantidade_retirar
-            cursor.execute("UPDATE estoque SET quantidade = %s WHERE id_produto = %s", (nova_qtd, id_produto))
+            cursor.execute("UPDATE estoque SET quantidade = %s WHERE id_produto = %s", (nova_qtd, produto['id_produto']))
             
             cursor.execute("""
                 INSERT INTO historico_logs (usuario, acao, detalhe)
                 VALUES (%s, 'Retirada', %s)
-            """, (session['usuario'], f"Retirado {quantidade_retirar} un do item {produto['nome']} (ID: {id_produto})"))
+            """, (session['usuario'], f"Retirado {quantidade_retirar} un do item {produto['nome']} (ID: {produto['id_produto']})"))
             
             mysql.connection.commit()
             flash("Baixa efetuada com sucesso!", "success")
             return redirect(url_for('lobby'))
         else:
-            flash("Erro: Quantidade indisponível ou produto inexistente!", "error")
+            flash("Erro: Produto não encontrado ou quantidade insuficiente em estoque!", "error")
             
-    cursor.execute("SELECT id_produto, nome, quantidade FROM estoque WHERE quantidade > 0 ORDER BY id_produto ASC")
-    produtos_disponiveis = cursor.fetchall()
-    return render_template('retirada.html', estoque=produtos_disponiveis)
+    cursor.execute("SELECT DISTINCT nome FROM estoque WHERE quantidade > 0")
+    sugestoes = [row['nome'] for row in cursor.fetchall()]
+    return render_template('retirada.html', sugestoes=sugestoes)
 
 @app.route('/editar/<id_produto>', methods=['GET', 'POST'])
 def editar(id_produto):
@@ -248,7 +247,7 @@ def editar(id_produto):
             """, (session['usuario'], f"Editou propriedades do item {nome} (ID: {id_produto})"))
             
             mysql.connection.commit()
-            flash("Informações do material atualizadas!", "success")
+            flash("Informações do material updated!", "success")
             return redirect(url_for('lobby'))
 
     cursor.execute("SELECT id_produto, nome, area, quantidade, descricao, link_midia as link_imagem FROM estoque WHERE id_produto = %s", (id_produto,))
@@ -256,11 +255,10 @@ def editar(id_produto):
     
     cursor.execute("SELECT DISTINCT nome FROM estoque")
     sugestoes = [row['nome'] for row in cursor.fetchall()]
-    
     return render_template('editar.html', produto=produto, sugestoes=sugestoes)
 
 # -----------------------------------------------------------------------------
-# PAINEL ADMINISTRATIVO
+# PAINEL ADMINISTRATIVO (COM SISTEMA DE DESBLOQUEIO)
 # -----------------------------------------------------------------------------
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
@@ -295,11 +293,6 @@ def admin_panel():
                     INSERT INTO usuarios (login, senha, status, role)
                     VALUES (%s, %s, 'ativo', %s)
                 """, (funcionario, senha_hash, tipo_permissao))
-                
-                cursor.execute("""
-                    INSERT INTO historico_logs (usuario, acao, detalhe)
-                    VALUES (%s, 'Admin', %s)
-                """, (session['usuario'], f"Criou o utilizador '{funcionario}' com perfil '{tipo_permissao}'"))
                 mysql.connection.commit()
                 flash(f"Perfil de '{funcionario}' criado com sucesso!", "success")
             except:
@@ -311,27 +304,23 @@ def admin_panel():
                 salt = bcrypt.gensalt()
                 senha_hash_nova = bcrypt.hashpw(nova_senha.encode('utf-8'), salt).decode('utf-8')
                 cursor.execute("UPDATE usuarios SET senha = %s WHERE login = %s", (senha_hash_nova, funcionario))
-                flash(f"Senha de {funcionario} redefinida com segurança.", "success")
                 mysql.connection.commit()
+                flash(f"Senha de {funcionario} redefinida com segurança.", "success")
                 
         elif acao == 'restringir_temp':
-            tempo_bloqueio = request.form.get('tempo_bloqueio', 'Não especificado')
             cursor.execute("UPDATE usuarios SET status = 'suspenso_temp' WHERE login = %s", (funcionario,))
-            cursor.execute("""
-                INSERT INTO historico_logs (usuario, acao, detalhe)
-                VALUES (%s, 'Admin', %s)
-            """, (session['usuario'], f"Bloqueou temporariamente o usuário {funcionario}. Tempo: {tempo_bloqueio}"))
             mysql.connection.commit()
-            flash(f"Usuário {funcionario} suspenso temporariamente ({tempo_bloqueio}).", "success")
+            flash(f"Usuário {funcionario} suspenso/bloqueado temporariamente.", "success")
+            
+        elif acao == 'desbloquear':  # Nova funcionalidade solicitada
+            cursor.execute("UPDATE usuarios SET status = 'ativo' WHERE login = %s", (funcionario,))
+            mysql.connection.commit()
+            flash(f"Usuário {funcionario} reativado e desbloqueado com sucesso!", "success")
             
         elif acao == 'excluir':
             cursor.execute("DELETE FROM usuarios WHERE login = %s", (funcionario,))
-            cursor.execute("""
-                INSERT INTO historico_logs (usuario, acao, detalhe)
-                VALUES (%s, 'Admin', %s)
-            """, (session['usuario'], f"Excluiu permanentemente o usuário {funcionario}"))
             mysql.connection.commit()
-            flash(f"Usuário {funcionario} deletado permanentemente do sistema.", "success")
+            flash(f"Usuário {funcionario} deletado permanentemente.", "success")
 
     cursor.execute("SELECT login, status, role FROM usuarios")
     usuarios_lista = cursor.fetchall()

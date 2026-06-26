@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>Saída / Baixa de Material</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        input[type="text"], datalist option {
+            text-transform: none !important;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -24,12 +29,15 @@
         <h2>Registo de Saída / Baixa do Estoque</h2>
         
         <form method="POST">
-            <label>Selecione o Item para Saída:</label>
-            <select name="id_produto" required>
-                {% for item in estoque %}
-                    <option value="{{ item.id_produto }}">{{ item.id_produto }} - {{ item.nome }} [Disponível: {{ item.quantidade }} un]</option>
+            <label>Digite ou Selecione o Item para Saída:</label>
+            <input type="text" name="nome" list="produtos-existentes" required placeholder="Digite o nome do material para dar baixa..." autocomplete="off">
+            <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 15px;">💡 Comece a digitar o nome do objeto para ver as sugestões de itens em estoque.</small>
+            
+            <datalist id="produtos-existentes">
+                {% for nome in sugestoes %}
+                    <option value="{{ nome }}">
                 {% endfor %}
-            </select>
+            </datalist>
 
             <label>Quantidade a Retirar:</label>
             <input type="number" name="quantidade" min="1" value="1" required>

@@ -44,6 +44,17 @@
             border-radius: 8px; 
             border: 1px solid #475569;
         }
+        
+        /* Define o tom de azul escuro da navbar para os tópicos do cabeçalho fixo */
+        .tabela-responsiva th {
+            position: sticky;
+            top: 0;
+            background-color: #1e293b !important; /* Azul escuro combinando com o cabeçalho superior */
+            color: #ffffff !important;
+            z-index: 1;
+            padding: 12px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -62,7 +73,23 @@
     </header>
 
     <div class="container" style="max-width: 1200px; margin-top: 30px;">
-        <h2>Visão Geral do Estoque</h2>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;">
+            <h2 style="margin: 0;">Visão Geral do Estoque</h2>
+            
+            <form method="GET" action="{{ url_for('lobby', area_filtro=area_atual) }}" style="display: flex; gap: 10px; max-width: 500px; flex: 1;">
+                <input type="text" name="pesquisa" list="produtos-pesquisa" value="{{ termo_pesquisa }}" placeholder="🔍 Pesquisar equipamento no estoque..." autocomplete="off" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; text-transform: none;">
+                <datalist id="produtos-pesquisa">
+                    {% for nome in sugestoes %}
+                        <option value="{{ nome }}">
+                    {% endfor %}
+                </datalist>
+                <button type="submit" style="padding: 10px 20px; background-color: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Buscar</button>
+                {% if termo_pesquisa %}
+                    <a href="{{ url_for('lobby', area_filtro=area_atual) }}" style="padding: 10px 20px; background-color: #64748b; color: white; border-radius: 6px; text-decoration: none; text-align: center; font-weight: bold;">Limpar</a>
+                {% endif %}
+            </form>
+        </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -82,54 +109,56 @@
             <a href="{{ url_for('lobby', area_filtro='Elétrica') }}" class="btn {% if area_atual == 'Elétrica' %}btn-primary{% else %}btn-secondary{% endif %}">⚡ Elétrica</a>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Código ID</th>
-                    <th>Nome do Item</th>
-                    <th>Setor</th>
-                    <th>Qtd Disponível</th>
-                    <th>Descrição / Detalhes</th>
-                    <th>Ações / Mídia</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in estoque %}
-                <tr>
-                    <td><code>{{ item.id_produto }}</code></td>
-                    <td style="font-weight: bold;">{{ item.nome }}</td>
-                    <td>{{ item.area }}</td>
-                    <td>
-                        <span class="badge {% if item.quantidade > 0 %}badge-success{% else %}badge-danger{% endif %}">
-                            {{ item.quantidade }} un
-                        </span>
-                    </td>
-                    <td>{{ item.descricao if item.descricao else '-' }}</td>
-                    <td>
-                        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
-                            <div style="display: flex; gap: 8px;">
-                                <a href="{{ url_for('editar', id_produto=item.id_produto) }}" class="btn-editar-laranja">Editar</a>
-                                
-                                {% if item.possui_imagem == 1 %}
-                                    <button class="btn-visualizar-azul" onclick="carregarEVisualizarImagem('{{ item.id_produto }}')">Visualizar</button>
-                                {% else %}
-                                    <span style="color:#64748b; font-size: 12px; font-style: italic; align-self: center;">Sem imagem</span>
-                                {% endif %}
-                            </div>
+        <div class="tabela-responsiva" style="max-height: 500px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <table style="width: 100%; border-collapse: collapse; margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Código ID</th>
+                        <th>Nome do Item</th>
+                        <th>Setor</th>
+                        <th>Qtd Disponível</th>
+                        <th>Descrição / Detalhes</th>
+                        <th>Ações / Mídia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in estoque %}
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><code>{{ item.id_produto }}</code></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">{{ item.nome }}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ item.area }}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                            <span class="badge {% if item.quantidade > 0 %}badge-success{% else %}badge-danger{% endif %}">
+                                {{ item.quantidade }} un
+                            </span>
+                        </td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ item.descricao if item.descricao else '-' }}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                            <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="{{ url_for('editar', id_produto=item.id_produto) }}" class="btn-editar-laranja">Editar</a>
+                                    
+                                    {% if item.possui_imagem == 1 %}
+                                        <button class="btn-visualizar-azul" onclick="carregarEVisualizarImagem('{{ item.id_produto }}')">Visualizar</button>
+                                    {% else %}
+                                        <span style="color:#64748b; font-size: 12px; font-style: italic; align-self: center;">Sem imagem</span>
+                                    {% endif %}
+                                </div>
 
-                            <div id="box-img-{{ item.id_produto }}" class="container-imagem-oculta">
-                                <img id="tag-img-{{ item.id_produto }}" src="" style="width:300px; height:300px; object-fit: cover; border-radius: 6px; display: block;" alt="Carregando...">
+                                <div id="box-img-{{ item.id_produto }}" class="container-imagem-oculta">
+                                    <img id="tag-img-{{ item.id_produto }}" src="" style="width:300px; height:300px; object-fit: cover; border-radius: 6px; display: block;" alt="Carregando...">
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" style="text-align: center; color: #64748b;">Nenhum produto cadastrado nesta categoria.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">Nenhum produto encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -137,25 +166,22 @@
         const box = document.getElementById('box-img-' + idProduto);
         const img = document.getElementById('tag-img-' + idProduto);
 
-        // Se o bloco já estiver aberto, apenas fecha (comportamento de liga/desliga)
         if (box.style.display === "block") {
             box.style.display = "none";
             return;
         }
 
-        // Se a tag img já tiver uma URL, não precisa buscar no banco de dados de novo
         if (img.src && img.src !== window.location.href) {
             box.style.display = "block";
             return;
         }
 
-        // Faz a busca dinâmica na nossa rota de API do Flask
         fetch('/api/obter_link_imagem/' + idProduto)
             .then(response => response.json())
             .then(data => {
                 if (data.link_url) {
-                    img.src = data.link_url; // Atribui a URL externa vinda do banco de dados na tag <img>
-                    box.style.display = "block"; // Torna o container visível
+                    img.src = data.link_url;
+                    box.style.display = "block";
                 } else {
                     alert('Erro ao carregar o link da imagem.');
                 }
