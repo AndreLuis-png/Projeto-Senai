@@ -84,7 +84,7 @@ VALUES ('10002', 'Parafusos', 'Mecânica', 200, 'Entra rodando', 'https://encryp
 INSERT INTO estoque (id_produto, nome, area, quantidade, descricao, link_midia) #Adiciona itens
 VALUES ('20001', 'Paineis fotovoltaicos', 'Elétrica', 2, 'Deixa o wifi ligado', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMI9NnZ9OYWpmM1wtQ-M1_qA-3j2069zxWJkRJ1pBIew&s=10');
 INSERT INTO estoque (id_produto, nome, area, quantidade, descricao, link_midia) #Adiciona itens
-VALUES ('00002', 'Chave philips', 'Geral', 7, 'Descrição curta do item', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMOMqwTSGR4S2soHpfyq7s5czjFTB6h6zBHHycqd2ZRg&s=10');
+VALUES ('00002', 'Chave philips', 'Geral', 7, 'Enfia na fenda de X', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMOMqwTSGR4S2soHpfyq7s5czjFTB6h6zBHHycqd2ZRg&s=10');
 
 SELECT * FROM estoque;
 SELECT * FROM config_admin;

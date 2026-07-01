@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-pt">
 <head>
+    <link rel="icon" type="image/jpg" href="/static/çenay.jpg">
     <meta charset="UTF-8">
     <title>Editar Material</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -30,7 +31,7 @@
                 <option value="Elétrica" {% if produto.area == 'Elétrica' %}selected{% endif %}>⚡ Setor Elétrico</option>
             </select>
 
-            <label>Quantidade em Stock:</label>
+            <label>Quantidade em Estoque:</label>
             <input type="number" name="quantidade" min="0" value="{{ produto.quantidade }}" required>
 
             <label>Especificação / Descrição do Tipo:</label>
