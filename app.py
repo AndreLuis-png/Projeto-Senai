@@ -1,3 +1,4 @@
+#pip install flask flask-mysqldb bcrypt
 import os
 import re
 import unicodedata
