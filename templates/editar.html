@@ -5,46 +5,84 @@
     <meta charset="UTF-8">
     <title>Editar Material</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        input[type="text"], textarea, datalist option {
+            text-transform: none !important;
+        }
+        .btn-cancelar-cinza {
+            background-color: #64748b !important;
+            color: white !important;
+            border: none;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn-cancelar-cinza:hover {
+            background-color: #475569 !important;
+        }
+    </style>
 </head>
 <body>
-    <div class="container" style="max-width: 600px; margin-top: 50px;">
-        <h2>Editar Informações do Material</h2>
-        
-        <p style="color: var(--gray-muted); margin-bottom: 25px;">
-            Código Atual: <code>{{ produto.id_produto }}</code> 
-        </p>
+    <header>
+        <h1>Painel do Almoxarifado</h1>
+        <p>Operador: <strong>{{ session['usuario'] }}</strong></p>
+        <nav>
+            <a href="{{ url_for('lobby') }}">🔎 Consultar Estoque</a> 
+            <a href="{{ url_for('insercao') }}">📥 Entrada de Material</a> 
+            <a href="{{ url_for('retirada') }}">📤 Saída / Baixa</a> 
+            {% if session['is_admin'] %}
+                <a href="{{ url_for('admin_panel') }}" style="color:#f87171;">🛠️ Administração</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" style="margin-left: auto; background: rgba(239,68,68,0.2);">Sair</a>
+        </nav>
+    </header>
+
+    <div class="container" style="max-width: 600px; margin-top: 30px;">
+        <h2>Editar Propriedades do Material (ID: {{ produto.id_produto }})</h2>
         
         <form method="POST">
             <label>Nome do Produto:</label>
             <input type="text" name="nome" value="{{ produto.nome }}" list="produtos-existentes" required autocomplete="off">
-            
             <datalist id="produtos-existentes">
-                {% for nome in sugestoes %}
-                    <option value="{{ nome }}">
+                {% for item in sugestoes %}
+                    <option value="{{ item.nome }}">ID: {{ item.id_produto }} | R$ {{ "%.2f"|format(item.preco) }}</option>
                 {% endfor %}
             </datalist>
 
-            <label>Área de Uso / Setor:</label>
+            <label>Área Técnico / Setor:</label>
             <select name="area" required>
-                <option value="Geral" {% if produto.area == 'Geral' %}selected{% endif %}>⚙️ Utilidade Geral</option>
-                <option value="Mecânica" {% if produto.area == 'Mecânica' %}selected{% endif %}>🔧 Setor Mecânico</option>
-                <option value="Elétrica" {% if produto.area == 'Elétrica' %}selected{% endif %}>⚡ Setor Elétrico</option>
+                <option value="Geral" {% if produto.area == 'Geral' %}selected{% endif %}>⚙️ Utilidade Geral (Prefixo 0)</option>
+                <option value="Mecânica" {% if produto.area == 'Mecânica' %}selected{% endif %}>🔧 Setor Mecânico (Prefixo 1)</option>
+                <option value="Elétrica" {% if produto.area == 'Elétrica' %}selected{% endif %}>⚡ Setor Elétrico (Prefixo 2)</option>
             </select>
 
             <label>Quantidade em Estoque:</label>
             <input type="number" name="quantidade" min="0" value="{{ produto.quantidade }}" required>
 
-            <label>Especificação / Descrição do Tipo:</label>
-            <textarea name="descricao" rows="4" maxlength="255">{{ produto.descricao if produto.descricao else '' }}</textarea>
+            <label>Preço Unitário (R$):</label>
+            <input type="number" name="preco" step="0.01" min="0.00" value="{{ produto.preco }}" required>
 
-            <label>Link da Imagem (URL):</label>
+            <label>Especificação / Descrição Curta:</label>
+            <textarea name="descricao" rows="3" maxlength="255">{{ produto.descricao if produto.descricao else '' }}</textarea>
+
+            <label>Link da Imagem de Exemplo (URL):</label>
             <input type="url" name="link_imagem" value="{{ produto.link_imagem if produto.link_imagem else '' }}" placeholder="https://exemplo.com/imagem.jpg">
 
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button type="submit" name="botao_acao" value="salvar" style="flex: 2;">Salvar Alterações</button>
-                <button type="submit" name="botao_acao" value="excluir" style="background: #ef4444; flex: 1;" onclick="return confirm('ATENÇÃO: Deseja apagar este produto para corrigir um lançamento incorreto? Todas as unidades registradas serão descartadas permanentemente do estoque.');">🗑️ Apagar Produto</button>
-                <a href="{{ url_for('lobby') }}" class="btn" style="text-align: center; background:#6b7280; line-height: 38px;">Cancelar</a>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" name="botao_acao" value="salvar" style="flex: 1; background-color: #0284c7;">Salvar Alterações</button>
+                {% if session['is_admin'] %}
+                    <button type="submit" name="botao_acao" value="excluir" style="flex: 1; background-color: #dc2626;" onclick="return confirm('Tem certeza absoluta que deseja deletar este item do estoque permanentemente?')">Deletar Produto</button>
+                {% endif %}
             </div>
+            
+            <a href="{{ url_for('lobby') }}" class="btn-cancelar-cinza">↩️ Cancelar / Voltar sem alterar</a>
         </form>
     </div>
 </body>

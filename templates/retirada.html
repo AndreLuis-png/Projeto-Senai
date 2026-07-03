@@ -31,12 +31,12 @@
         
         <form method="POST">
             <label>Digite ou Selecione o Item para Saída:</label>
-            <input type="text" name="nome" list="produtos-existentes" required placeholder="Digite o nome do material para dar baixa..." autocomplete="off">
-            <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 15px;">💡 Comece a digitar o nome do objeto para ver as sugestões de itens em estoque.</small>
+            <input type="text" id="campo-item-retirada" name="nome" required placeholder="Digite ID, Nome ou Preço...">
+            <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 15px;">💡 Identifique por ID, Nome ou Preço na caixa de texto.</small>
             
             <datalist id="produtos-existentes">
-                {% for nome in sugestoes %}
-                    <option value="{{ nome }}">
+                {% for item in sugestoes %}
+                    <option value="ID: {{ item.id_produto }} | {{ item.nome }} | R$ {{ '%.2f'|format(item.preco) }}" data-nome="{{ item.nome }}"></option>
                 {% endfor %}
             </datalist>
 
@@ -46,5 +46,33 @@
             <button type="submit" style="background-color: #dc2626; color: white;">Confirmar Baixa no Sistema</button>
         </form>
     </div>
+
+    <script>
+    const inputRetirada = document.getElementById('campo-item-retirada');
+    const datalistRetirada = document.getElementById('produtos-existentes');
+    const opcoesOriginaisRetirada = Array.from(datalistRetirada.options);
+
+    inputRetirada.addEventListener('focus', function() {
+        this.setAttribute('list', 'produtos-existentes');
+    });
+
+    inputRetirada.addEventListener('input', function() {
+        const termo = this.value.toLowerCase();
+        
+        const opcaoSelecionada = opcoesOriginaisRetirada.find(o => o.value === this.value);
+        if (opcaoSelecionada) {
+            this.value = opcaoSelecionada.getAttribute('data-nome');
+            this.blur();
+            return;
+        }
+
+        datalistRetirada.innerHTML = '';
+        opcoesOriginaisRetirada.forEach(opcao => {
+            if (opcao.value.toLowerCase().includes(termo)) {
+                datalistRetirada.appendChild(opcao.cloneNode(true));
+            }
+        });
+    });
+    </script>
 </body>
 </html>

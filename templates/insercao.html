@@ -6,7 +6,6 @@
     <title>Entrada de Material</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        /* Garante que nenhum estilo global force o texto a ficar em letras maiúsculas nesta página */
         input[type="text"], textarea, datalist option {
             text-transform: none !important;
         }
@@ -32,12 +31,12 @@
         
         <form method="POST">
             <label>Nome do Equipamento / Objeto:</label>
-            <input type="text" name="nome" list="produtos-existentes" required placeholder="Digite o item (ex: Multimetro)..." autocomplete="off" style="text-transform: none;">
+            <input type="text" id="campo-item-insercao" name="nome" required placeholder="Digite ID, Nome ou Preço..." autocomplete="off">
             <small style="color: #64748b; display:block; margin-top: 2px; margin-bottom: 10px;">💡 O sistema removerá acentos e deixará apenas a primeira letra em maiúscula automaticamente.</small>
             
             <datalist id="produtos-existentes">
-                {% for nome in sugestoes %}
-                    <option value="{{ nome }}">
+                {% for item in sugestoes %}
+                    <option value="ID: {{ item.id_produto }} | {{ item.nome }} | R$ {{ '%.2f'|format(item.preco) }}" data-nome="{{ item.nome }}"></option>
                 {% endfor %}
             </datalist>
 
@@ -51,16 +50,48 @@
             <label>Quantidade de Entrada:</label>
             <input type="number" name="quantidade" min="1" value="1" required>
 
+            <label>Preço Unitário (R$):</label>
+            <input type="number" name="preco" step="0.01" min="0.00" value="0.00" required placeholder="0.00">
+
             <label>Especificação / Descrição Curta:</label>
-            <textarea name="descricao" rows="3" maxlength="255" placeholder="Ex: Modelo, marca ou especificações complementares..." style="text-transform: none;"></textarea>
-            <small style="color: #64748b; display: block; margin-top: -5px; margin-bottom: 15px;">Máximo de 255 caracteres. Apenas a primeira letra ficará em maiúscula.</small>
+            <textarea name="descricao" rows="3" maxlength="255" placeholder="Ex: Modelo, marca ou especificações complementares..."></textarea>
 
             <label>Link da Imagem de Exemplo (URL Opcional):</label>
             <input type="url" name="link_imagem" placeholder="https://exemplo.com/imagem.jpg">
-            <small style="color: #64748b; display:block; margin-top: -8px; margin-bottom: 15px;">Insira um endereço URL direto de imagem.</small>
 
             <button type="submit">Confirmar Entrada</button>
         </form>
     </div>
+
+    <script>
+    const inputProduto = document.getElementById('campo-item-insercao');
+    const datalist = document.getElementById('produtos-existentes');
+    const opcoesOriginais = Array.from(datalist.options);
+
+    // Vincula o datalist dinamicamente apenas quando o usuário interage
+    inputProduto.addEventListener('focus', function() {
+        this.setAttribute('list', 'produtos-existentes');
+    });
+
+    // Escuta a digitação para filtrar mantendo a ordem dos caracteres
+    inputProduto.addEventListener('input', function() {
+        const termo = this.value.toLowerCase();
+        
+        // Se o usuário selecionou uma opção completa da lista, extrai apenas o Nome puro
+        const opcaoSelecionada = opcoesOriginais.find(o => o.value === this.value);
+        if (opcaoSelecionada) {
+            this.value = opcaoSelecionada.getAttribute('data-nome');
+            this.blur(); // Remove o foco para fechar a caixinha do datalist
+            return;
+        }
+
+        datalist.innerHTML = '';
+        opcoesOriginais.forEach(opcao => {
+            if (opcao.value.toLowerCase().includes(termo)) {
+                datalist.appendChild(opcao.cloneNode(true));
+            }
+        });
+    });
+    </script>
 </body>
 </html>

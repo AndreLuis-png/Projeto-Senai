@@ -6,6 +6,41 @@
     <title>Consulta de Estoque</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
+        /* FIXA A PÁGINA: Remove a barra de rolagem do extremo direito do navegador */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-y: hidden; /* Força o navegador a sumir com a barra lateral direita */
+        }
+
+        /* Estrutura interna para acomodar o cabeçalho fixo e o container */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            box-sizing: border-box;
+            overflow: hidden; /* Evita que o container vaze */
+        }
+
+        /* MANUTENÇÃO DA ROLAGEM INTERNA DA TABELA */
+        .tabela-responsiva {
+            flex: 1;
+            overflow-y: auto; /* Mantém a barra de rolagem apenas aqui dentro da tabela */
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
         .btn-editar-laranja {
             background-color: #f97316 !important;
             color: white !important;
@@ -45,12 +80,10 @@
             border-radius: 8px; 
             border: 1px solid #475569;
         }
-        
-        /* Define o tom de azul escuro da navbar para os tópicos do cabeçalho fixo */
         .tabela-responsiva th {
             position: sticky;
             top: 0;
-            background-color: #1e293b !important; /* Azul escuro combinando com o cabeçalho superior */
+            background-color: #1e293b !important;
             color: #ffffff !important;
             z-index: 1;
             padding: 12px;
@@ -73,22 +106,23 @@
         </nav>
     </header>
 
-    <div class="container" style="max-width: 1200px; margin-top: 30px;">
-        
+    <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;">
             <h2 style="margin: 0;">Visão Geral do Estoque</h2>
             
-            <form method="GET" action="{{ url_for('lobby', area_filtro=area_atual) }}" style="display: flex; gap: 10px; max-width: 500px; flex: 1;">
-                <input type="text" name="pesquisa" list="produtos-pesquisa" value="{{ termo_pesquisa }}" placeholder="🔍 Pesquisar equipamento no estoque..." autocomplete="off" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; text-transform: none;">
+            <form method="GET" action="{{ url_for('lobby', area_filtro=area_atual) }}" style="display: flex; gap: 5px; max-width: 750px; flex: 1;">
+                <input type="text" id="campo-pesquisa-lobby" name="pesquisa" list="produtos-pesquisa" value="{{ termo_pesquisa }}" placeholder="🔎 Buscar por ID, Nome ou Preço..." autocomplete="off" style="flex: 2; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; text-transform: none;">
                 <datalist id="produtos-pesquisa">
-                    {% for nome in sugestoes %}
-                        <option value="{{ nome }}">
+                    {% for item in sugestoes %}
+                        <option value="{{ item.nome }}">ID: {{ item.id_produto }} | R$ {{ "%.2f"|format(item.preco) }}</option>
                     {% endfor %}
                 </datalist>
-                <button type="submit" style="padding: 10px 20px; background-color: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Buscar</button>
-                {% if termo_pesquisa %}
-                    <a href="{{ url_for('lobby', area_filtro=area_atual) }}" style="padding: 10px 20px; background-color: #64748b; color: white; border-radius: 6px; text-decoration: none; text-align: center; font-weight: bold;">Limpar</a>
-                {% endif %}
+                
+                <select name="ordem" onchange="this.form.submit()" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold; background: white; cursor: pointer;">
+                    <option value="" {% if not ordem_atual %}selected{% endif %}>🔢 Ordenar por ID</option>
+                    <option value="crescente" {% if ordem_atual == 'crescente' %}selected{% endif %}>📉 Preço: Menor ao Maior</option>
+                    <option value="decrescente" {% if ordem_atual == 'decrescente' %}selected{% endif %}>📈 Preço: Maior ao Menor</option>
+                </select>
             </form>
         </div>
 
@@ -102,15 +136,15 @@
           {% endif %}
         {% endwith %}
 
-        <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
             <span>Filtrar Setor:</span>
-            <a href="{{ url_for('lobby', area_filtro='Todos') }}" class="btn {% if area_atual == 'Todos' %}btn-primary{% else %}btn-secondary{% endif %}">Todos</a>
-            <a href="{{ url_for('lobby', area_filtro='Geral') }}" class="btn {% if area_atual == 'Geral' %}btn-primary{% else %}btn-secondary{% endif %}">⚙️ Geral</a>
-            <a href="{{ url_for('lobby', area_filtro='Mecânica') }}" class="btn {% if area_atual == 'Mecânica' %}btn-primary{% else %}btn-secondary{% endif %}">🔧 Mecânica</a>
-            <a href="{{ url_for('lobby', area_filtro='Elétrica') }}" class="btn {% if area_atual == 'Elétrica' %}btn-primary{% else %}btn-secondary{% endif %}">⚡ Elétrica</a>
+            <a href="{{ url_for('lobby', area_filtro='Todos', ordem=ordem_atual) }}" class="btn {% if area_atual == 'Todos' %}btn-primary{% else %}btn-secondary{% endif %}">Todos</a>
+            <a href="{{ url_for('lobby', area_filtro='Geral', ordem=ordem_atual) }}" class="btn {% if area_atual == 'Geral' %}btn-primary{% else %}btn-secondary{% endif %}">⚙️ Geral</a>
+            <a href="{{ url_for('lobby', area_filtro='Mecânica', ordem=ordem_atual) }}" class="btn {% if area_atual == 'Mecânica' %}btn-primary{% else %}btn-secondary{% endif %}">🔧 Mecânica</a>
+            <a href="{{ url_for('lobby', area_filtro='Elétrica', ordem=ordem_atual) }}" class="btn {% if area_atual == 'Elétrica' %}btn-primary{% else %}btn-secondary{% endif %}">⚡ Elétrica</a>
         </div>
 
-        <div class="tabela-responsiva" style="max-height: 500px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <div class="tabela-responsiva">
             <table style="width: 100%; border-collapse: collapse; margin: 0;">
                 <thead>
                     <tr>
@@ -118,11 +152,12 @@
                         <th>Nome do Item</th>
                         <th>Setor</th>
                         <th>Qtd Disponível</th>
+                        <th>Preço Unitário</th>
                         <th>Descrição / Detalhes</th>
                         <th>Ações / Mídia</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tabela-produtos-corpo">
                     {% for item in estoque %}
                     <tr>
                         <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><code>{{ item.id_produto }}</code></td>
@@ -133,19 +168,18 @@
                                 {{ item.quantidade }} un
                             </span>
                         </td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f766e;">R$ {{ "%.2f"|format(item.preco) }}</td>
                         <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ item.descricao if item.descricao else '-' }}</td>
                         <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
                             <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
                                 <div style="display: flex; gap: 8px;">
                                     <a href="{{ url_for('editar', id_produto=item.id_produto) }}" class="btn-editar-laranja">Editar</a>
-                                    
                                     {% if item.possui_imagem == 1 %}
                                         <button class="btn-visualizar-azul" onclick="carregarEVisualizarImagem('{{ item.id_produto }}')">Visualizar</button>
                                     {% else %}
                                         <span style="color:#64748b; font-size: 12px; font-style: italic; align-self: center;">Sem imagem</span>
                                     {% endif %}
                                 </div>
-
                                 <div id="box-img-{{ item.id_produto }}" class="container-imagem-oculta">
                                     <img id="tag-img-{{ item.id_produto }}" src="" style="width:300px; height:300px; object-fit: cover; border-radius: 6px; display: block;" alt="Carregando...">
                                 </div>
@@ -154,7 +188,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">Nenhum produto encontrado.</td>
+                        <td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">Nenhum produto encontrado.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -163,6 +197,24 @@
     </div>
 
     <script>
+    document.getElementById('campo-pesquisa-lobby').addEventListener('input', function() {
+        const termo = this.value.toLowerCase().trim();
+        const linhas = document.querySelectorAll('#tabela-produtos-corpo tr');
+
+        linhas.forEach(linha => {
+            if (linha.cells.length < 5) return;
+            const id = linha.cells[0] ? linha.cells[0].textContent.toLowerCase() : '';
+            const nome = linha.cells[1] ? linha.cells[1].textContent.toLowerCase() : '';
+            const preco = linha.cells[4] ? linha.cells[4].textContent.toLowerCase() : '';
+
+            if (id.includes(termo) || nome.includes(termo) || preco.includes(termo)) {
+                linha.style.display = "";
+            } else {
+                linha.style.display = "none";
+            }
+        });
+    });
+
     function carregarEVisualizarImagem(idProduto) {
         const box = document.getElementById('box-img-' + idProduto);
         const img = document.getElementById('tag-img-' + idProduto);
