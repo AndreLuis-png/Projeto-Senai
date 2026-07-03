@@ -74,3 +74,5 @@ SELECT * FROM estoque;
 SELECT * FROM config_admin;
 SELECT * FROM historico_logs;
 SELECT * FROM usuarios;
+
+DROP DATABASE almoxarifado_db

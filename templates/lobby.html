@@ -110,7 +110,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;">
             <h2 style="margin: 0;">Visão Geral do Estoque</h2>
             
-            <form method="GET" action="{{ url_for('lobby', area_filtro=area_atual) }}" style="display: flex; gap: 5px; max-width: 750px; flex: 1;">
+            <form method="GET" action="{{ url_for('lobby', area_filtro=area_atual) }}" style="display: flex; gap: 5px; max-width: 750px; flex: 1; transform: translateY(17px);">
                 <input type="text" id="campo-pesquisa-lobby" name="pesquisa" list="produtos-pesquisa" value="{{ termo_pesquisa }}" placeholder="🔎 Buscar por ID, Nome ou Preço..." autocomplete="off" style="flex: 2; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; text-transform: none;">
                 <datalist id="produtos-pesquisa">
                     {% for item in sugestoes %}
